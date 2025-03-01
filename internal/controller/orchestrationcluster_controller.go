@@ -58,7 +58,9 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	svc := specs.CreateService(*orchestrationCluster)
+	newSvc := svc.Spec.DeepCopy()
 	_, err = ctrl.CreateOrUpdate(ctx, r.Client, svc, func() error {
+		svc.Spec = *newSvc
 		return ctrl.SetControllerReference(orchestrationCluster, svc, r.Scheme)
 	})
 	if err != nil {
@@ -66,10 +68,9 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	sts := specs.CreateCamundaStatefulSet(*orchestrationCluster)
+	newSpec := sts.Spec.DeepCopy()
 	_, err = ctrl.CreateOrUpdate(ctx, r.Client, sts, func() error {
-		desired := specs.CreateCamundaStatefulSet(*orchestrationCluster)
-
-		sts.Spec = desired.Spec
+		sts.Spec = *newSpec
 		return ctrl.SetControllerReference(orchestrationCluster, sts, r.Scheme)
 	})
 	if err != nil {
