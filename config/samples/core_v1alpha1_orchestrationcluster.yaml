@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: camunda
 spec:
-  version: 8.8.0-alpha2-rc1
+  version: 8.7.0-alpha3
   clusterSize: 3
   partitionCount: 3
   replicationFactor: 3
