@@ -1,0 +1,94 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: orchestrationclusters.core.camunda.io
+spec:
+  group: core.camunda.io
+  names:
+    kind: OrchestrationCluster
+    listKind: OrchestrationClusterList
+    plural: orchestrationclusters
+    singular: orchestrationcluster
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: OrchestrationCluster is the Schema for the orchestrationclusters
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OrchestrationClusterSpec defines the desired state of OrchestrationCluster.
+            properties:
+              clusterSize:
+                format: int32
+                type: integer
+              hostName:
+                type: string
+              partitionCount:
+                format: int32
+                type: integer
+              password:
+                description: SecretKeySelector selects a key of a Secret.
+                properties:
+                  key:
+                    description: The key of the secret to select from.  Must be a
+                      valid secret key.
+                    type: string
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  optional:
+                    description: Specify whether the Secret or its key must be defined
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+              replicationFactor:
+                format: int32
+                type: integer
+              userName:
+                description: ELASTIC
+                type: string
+              version:
+                default: 8.7.0-alpha3
+                type: string
+            required:
+            - version
+            type: object
+          status:
+            description: OrchestrationClusterStatus defines the observed state of
+              OrchestrationCluster.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
