@@ -51,7 +51,16 @@ var _ = Describe("OrchestrationCluster Controller", func() {
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: corev1alpha1.OrchestrationClusterSpec{
+						PartitionCount:    3,
+						ReplicationFactor: 3,
+						ClusterSize:       3,
+						Database: corev1alpha1.Database{
+							Type:     corev1alpha1.ElasticsearchDatabaseType,
+							UserName: "",
+							HostName: "",
+						},
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
