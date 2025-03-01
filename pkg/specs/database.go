@@ -53,7 +53,10 @@ func exporterEnv(
 	}
 }
 
-func zeebeElasticsearch(hostName, username string, password corev1.SecretKeySelector) []corev1.EnvVar {
+func zeebeElasticsearch(
+	hostName, username string,
+	password corev1.SecretKeySelector,
+) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  "CAMUNDA_ZEEBE_ELASTICSEARCH_URL",
@@ -70,7 +73,10 @@ func zeebeElasticsearch(hostName, username string, password corev1.SecretKeySele
 	}
 }
 
-func camundaDatabaseElasticsearch(hostName, username string, password corev1.SecretKeySelector) []corev1.EnvVar {
+func camundaDatabaseElasticsearch(
+	hostName, username string,
+	password corev1.SecretKeySelector,
+) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  "CAMUNDA_DATABASE_CONNECT_TYPE",
@@ -95,7 +101,10 @@ func camundaDatabaseElasticsearch(hostName, username string, password corev1.Sec
 	}
 }
 
-func operateDatabase(hostName, username string, password corev1.SecretKeySelector) []corev1.EnvVar {
+func operateDatabase(
+	hostName, username string,
+	password corev1.SecretKeySelector,
+) []corev1.EnvVar {
 	const app = "OPERATE"
 	return []corev1.EnvVar{
 		{

@@ -229,9 +229,21 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 			camunda.Spec.Database.Password,
 		)...)
 
-		e = append(e, camundaDatabaseElasticsearch(camunda.Spec.Database.HostName, camunda.Spec.Database.UserName, camunda.Spec.Database.Password)...)
-		e = append(e, operateDatabase(camunda.Spec.Database.HostName, camunda.Spec.Database.UserName, camunda.Spec.Database.Password)...)
-		e = append(e, zeebeElasticsearch(camunda.Spec.Database.HostName, camunda.Spec.Database.UserName, camunda.Spec.Database.Password)...)
+		e = append(e, camundaDatabaseElasticsearch(
+			camunda.Spec.Database.HostName,
+			camunda.Spec.Database.UserName,
+			camunda.Spec.Database.Password,
+		)...)
+		e = append(e, operateDatabase(
+			camunda.Spec.Database.HostName,
+			camunda.Spec.Database.UserName,
+			camunda.Spec.Database.Password,
+		)...)
+		e = append(e, zeebeElasticsearch(
+			camunda.Spec.Database.HostName,
+			camunda.Spec.Database.UserName,
+			camunda.Spec.Database.Password,
+		)...)
 	}
 
 	return e
