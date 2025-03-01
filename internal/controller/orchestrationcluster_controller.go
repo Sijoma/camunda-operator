@@ -19,6 +19,10 @@ package controller
 import (
 	"context"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,12 +73,34 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 
 	sts := specs.CreateCamundaStatefulSet(*orchestrationCluster)
 	newSpec := sts.Spec.DeepCopy()
+	var ready bool
 	_, err = ctrl.CreateOrUpdate(ctx, r.Client, sts, func() error {
 		sts.Spec = *newSpec
+		// TODO: Check Topology for healthiness
+		ready = sts.Status.ReadyReplicas > *newSpec.Replicas/2
 		return ctrl.SetControllerReference(orchestrationCluster, sts, r.Scheme)
 	})
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	// TODO: Implement proper status
+	conditionStatus := metav1.ConditionFalse
+	if ready {
+		conditionStatus = metav1.ConditionTrue
+	}
+	changed := meta.SetStatusCondition(&orchestrationCluster.Status.Conditions, metav1.Condition{
+		Type:               "Ready",
+		Status:             conditionStatus,
+		ObservedGeneration: orchestrationCluster.Generation,
+		Reason:             "CamundaReplicasReady",
+		Message:            "replicas are ready",
+	})
+	if changed {
+		err = r.Status().Update(ctx, orchestrationCluster)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -85,5 +111,7 @@ func (r *OrchestrationClusterReconciler) SetupWithManager(mgr ctrl.Manager) erro
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1alpha1.OrchestrationCluster{}).
 		Named("orchestrationcluster").
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }

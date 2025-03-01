@@ -26,6 +26,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/camunda/camunda-operator/test/utils"
 )
@@ -282,7 +283,7 @@ var _ = Describe("Manager", Ordered, func() {
 				podOutput, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred())
 				podNames := utils.GetNonEmptyLines(podOutput)
-				g.Expect(len(podNames)).To(HaveLen(3))
+				g.Expect(podNames).To(HaveLen(3))
 
 				camundaPodName := podNames[0]
 				g.Expect(camundaPodName).Should(ContainSubstring("camunda-sample"))
