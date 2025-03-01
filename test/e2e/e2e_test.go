@@ -300,7 +300,7 @@ var _ = Describe("Manager", Ordered, func() {
 
 			By("running zbctl status")
 			verifyZeebeTopology := func(g Gomega) {
-				cmd = exec.Command("kubectl", "port-forward", "service/camunda-sample", "26500", "-n", "default")
+				cmd = exec.Command("kubectl", "port-forward", "service/camunda", "26500", "-n", "default")
 				// run in closure to make sure it does not block
 				go func() {
 					_, err := utils.Run(cmd)
@@ -314,6 +314,7 @@ var _ = Describe("Manager", Ordered, func() {
 				// Wait for port-forward to be working
 				time.Sleep(time.Second * 5)
 
+				// TODO: dont rely on ZBCTL
 				cmd = exec.Command("zbctl", "status", "--insecure")
 				output, err := utils.Run(cmd)
 				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
