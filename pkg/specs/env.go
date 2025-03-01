@@ -10,13 +10,29 @@ func camundaExporterEnv(hostName, username string, password corev1.SecretKeySele
 	return exporterEnv("CAMUNDAEXPORTER", "io.camunda.exporter.CamundaExporter", "CONNECT", hostName, username, password)
 }
 
-func elasticsearchExporterEnv(hostName, username string, password corev1.SecretKeySelector) []corev1.EnvVar {
-	els := exporterEnv("ELASTICSEARCH", "io.camunda.zeebe.exporter.ElasticsearchExporter", "AUTHENTICATION", hostName, username, password)
+func elasticsearchExporterEnv(
+	hostName, username string,
+	password corev1.SecretKeySelector,
+) []corev1.EnvVar {
+	els := exporterEnv(
+		"ELASTICSEARCH",
+		"io.camunda.zeebe.exporter.ElasticsearchExporter",
+		"AUTHENTICATION",
+		hostName,
+		username,
+		password,
+	)
 	els[1].Name = "ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL"
 	return els
 }
 
-func exporterEnv(name string, className string, param string, hostName, username string, password corev1.SecretKeySelector) []corev1.EnvVar {
+func exporterEnv(
+	name string,
+	className string,
+	param string,
+	hostName, username string,
+	password corev1.SecretKeySelector,
+) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  fmt.Sprintf("ZEEBE_BROKER_EXPORTERS_%s_CLASS_NAME", name),

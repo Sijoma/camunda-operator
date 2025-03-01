@@ -240,7 +240,13 @@ func getPodAddresses(camunda v1alpha1.OrchestrationCluster) string {
 	svc := CreateService(camunda)
 
 	for podIndex := int32(0); podIndex < camunda.Spec.ClusterSize; podIndex++ {
-		podAddresses[podIndex] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local:26502", camunda.Name, podIndex, svc.Name, camunda.Namespace)
+		podAddresses[podIndex] = fmt.Sprintf(
+			"%s-%d.%s.%s.svc.cluster.local:26502",
+			camunda.Name,
+			podIndex,
+			svc.Name,
+			camunda.Namespace,
+		)
 	}
 	return strings.Join(podAddresses, ",")
 }

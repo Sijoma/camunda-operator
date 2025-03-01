@@ -61,6 +61,9 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 	_, err = ctrl.CreateOrUpdate(ctx, r.Client, svc, func() error {
 		return ctrl.SetControllerReference(orchestrationCluster, svc, r.Scheme)
 	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	sts := specs.CreateCamundaStatefulSet(*orchestrationCluster)
 	_, err = ctrl.CreateOrUpdate(ctx, r.Client, sts, func() error {

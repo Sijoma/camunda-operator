@@ -272,7 +272,7 @@ var _ = Describe("Manager", Ordered, func() {
 			verifyCamundaUp := func(g Gomega) {
 				// Get pod name
 				cmd = exec.Command("kubectl", "get",
-					"pods", "-l", "cluster=camunda-sample",
+					"pods", "-l", "cluster=camunda",
 					"-o", "go-template={{ range .items }}"+
 						"{{ if not .metadata.deletionTimestamp }}"+
 						"{{ .metadata.name }}"+
@@ -282,7 +282,7 @@ var _ = Describe("Manager", Ordered, func() {
 				podOutput, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred())
 				podNames := utils.GetNonEmptyLines(podOutput)
-				g.Expect(len(podNames)).To(BeNumerically("==", 3))
+				g.Expect(len(podNames)).To(HaveLen(3))
 
 				camundaPodName := podNames[0]
 				g.Expect(camundaPodName).Should(ContainSubstring("camunda-sample"))
@@ -305,21 +305,21 @@ var _ = Describe("Manager", Ordered, func() {
 				go func() {
 					_, err := utils.Run(cmd)
 					if err != nil {
-						fmt.Fprintf(GinkgoWriter, "error running kubectl port-forward: %v\n", err)
+						_, _ = fmt.Fprintf(GinkgoWriter, "error running kubectl port-forward: %v\n", err)
 					}
 				}()
 
-				fmt.Fprintf(GinkgoWriter, "error: %s\n", err)
-				fmt.Fprintf(GinkgoWriter, "sleeping 5 sec\n")
+				_, _ = fmt.Fprintf(GinkgoWriter, "error: %s\n", err)
+				_, _ = fmt.Fprintf(GinkgoWriter, "sleeping 5 sec\n")
 				// Wait for port-forward to be working
 				time.Sleep(time.Second * 5)
 
 				cmd = exec.Command("zbctl", "status", "--insecure")
 				output, err := utils.Run(cmd)
-				fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
+				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
 				g.Expect(err).NotTo(HaveOccurred())
-				fmt.Fprintf(GinkgoWriter, "output: %s\n", output)
-				g.Expect(string(output)).To(ContainSubstring("Cluster size: 3"))
+				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", output)
+				g.Expect(output).To(ContainSubstring("Cluster size: 3"))
 			}
 			Eventually(verifyZeebeTopology, time.Minute*5, time.Second).Should(Succeed())
 		})
