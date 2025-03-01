@@ -217,20 +217,22 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 		},
 	}
 
-	e = append(e, camundaExporterEnv(
-		camunda.Spec.HostName,
-		camunda.Spec.UserName,
-		camunda.Spec.Password,
-	)...)
-	e = append(e, elasticsearchExporterEnv(
-		camunda.Spec.HostName,
-		camunda.Spec.UserName,
-		camunda.Spec.Password,
-	)...)
+	if camunda.Spec.Database.Type == v1alpha1.ElasticsearchDatabaseType {
+		e = append(e, camundaExporterEnv(
+			camunda.Spec.Database.HostName,
+			camunda.Spec.Database.UserName,
+			camunda.Spec.Database.Password,
+		)...)
+		e = append(e, elasticsearchExporterEnv(
+			camunda.Spec.Database.HostName,
+			camunda.Spec.Database.UserName,
+			camunda.Spec.Database.Password,
+		)...)
 
-	e = append(e, camundaDatabaseElasticsearch(camunda.Spec.HostName, camunda.Spec.UserName, camunda.Spec.Password)...)
-	e = append(e, operateDatabase(camunda.Spec.HostName, camunda.Spec.UserName, camunda.Spec.Password)...)
-	e = append(e, zeebeElasticsearch(camunda.Spec.HostName, camunda.Spec.UserName, camunda.Spec.Password)...)
+		e = append(e, camundaDatabaseElasticsearch(camunda.Spec.Database.HostName, camunda.Spec.Database.UserName, camunda.Spec.Database.Password)...)
+		e = append(e, operateDatabase(camunda.Spec.Database.HostName, camunda.Spec.Database.UserName, camunda.Spec.Database.Password)...)
+		e = append(e, zeebeElasticsearch(camunda.Spec.Database.HostName, camunda.Spec.Database.UserName, camunda.Spec.Database.Password)...)
+	}
 
 	return e
 }

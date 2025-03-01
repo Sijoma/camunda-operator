@@ -32,11 +32,20 @@ type OrchestrationClusterSpec struct {
 	ReplicationFactor int32  `json:"replicationFactor,omitempty"`
 	ClusterSize       int32  `json:"clusterSize,omitempty"`
 
-	// ELASTIC
+	Database Database `json:"database,omitempty"`
+}
+
+type Database struct {
+	Type     DatabaseType         `json:"type"`
 	UserName string               `json:"userName,omitempty"`
 	Password v1.SecretKeySelector `json:"password,omitempty"`
 	HostName string               `json:"hostName,omitempty"`
 }
+
+type DatabaseType string
+
+const ElasticsearchDatabaseType DatabaseType = "elasticsearch"
+const PostgresqlDatabaseType DatabaseType = "postgresql"
 
 // OrchestrationClusterStatus defines the observed state of OrchestrationCluster.
 type OrchestrationClusterStatus struct {
