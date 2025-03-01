@@ -72,6 +72,9 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                   type:
+                    enum:
+                    - elasticsearch
+                    - postgresql
                     type: string
                   userName:
                     type: string
@@ -88,6 +91,7 @@ spec:
                 default: 8.7.0-alpha3
                 type: string
             required:
+            - database
             - version
             type: object
           status:

@@ -10,9 +10,11 @@ spec:
   clusterSize: 3
   partitionCount: 3
   replicationFactor: 3
-  hostName: "http://elasticsearch-es-http:9200"
-  userName: elastic
-  password:
-    key: elastic
-    name: elasticsearch-es-elastic-user
-    optional: false
+  database:
+    type: elasticsearch
+    hostName: "http://elasticsearch-es-http:9200"
+    userName: elastic
+    password:
+      key: elastic
+      name: elasticsearch-es-elastic-user
+      optional: false

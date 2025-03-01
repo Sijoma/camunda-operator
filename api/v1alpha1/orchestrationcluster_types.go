@@ -32,10 +32,11 @@ type OrchestrationClusterSpec struct {
 	ReplicationFactor int32  `json:"replicationFactor,omitempty"`
 	ClusterSize       int32  `json:"clusterSize,omitempty"`
 
-	Database Database `json:"database,omitempty"`
+	Database Database `json:"database"`
 }
 
 type Database struct {
+	// +kubebuilder:validation:Enum=elasticsearch;postgresql
 	Type     DatabaseType         `json:"type"`
 	UserName string               `json:"userName,omitempty"`
 	Password v1.SecretKeySelector `json:"password,omitempty"`

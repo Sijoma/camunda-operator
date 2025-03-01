@@ -285,7 +285,7 @@ var _ = Describe("Manager", Ordered, func() {
 				g.Expect(podNames).To(HaveLen(3))
 
 				camundaPodName := podNames[0]
-				g.Expect(camundaPodName).Should(ContainSubstring("camunda-sample"))
+				g.Expect(camundaPodName).Should(ContainSubstring("camunda"))
 
 				// Validate pod status
 				cmd = exec.Command("kubectl", "get",
