@@ -13,14 +13,18 @@ metadata:
   name: orchestrationcluster-sample
   namespace: your-namespace
 spec:
+  version: 8.7.0-alpha3
   clusterSize: 3
   partitionCount: 3
   replicationFactor: 3
-  hostName: "http://elasticsearch-es-http:9200"
-  userName: elastic
-  password:
-    key: elastic
-    name: elasticsearch-es-elastic-user
+  database:
+    type: elasticsearch
+    hostName: "http://elasticsearch-es-http:9200"
+    userName: elastic
+    password:
+      key: elastic
+      name: elasticsearch-es-elastic-user
+      optional: false
 ```
 
 ## Getting Started
