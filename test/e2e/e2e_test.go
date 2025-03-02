@@ -19,6 +19,8 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -298,9 +300,9 @@ var _ = Describe("Manager", Ordered, func() {
 			}
 			Eventually(verifyCamundaUp, time.Minute*5, time.Second).Should(Succeed())
 
-			By("running zbctl status")
+			By("checking actuator cluster info")
 			verifyZeebeTopology := func(g Gomega) {
-				cmd = exec.Command("kubectl", "port-forward", "service/camunda", "26500", "-n", "default")
+				cmd = exec.Command("kubectl", "port-forward", "service/camunda", "9600", "-n", "default")
 				// run in closure to make sure it does not block
 				go func() {
 					_, err := utils.Run(cmd)
@@ -314,13 +316,16 @@ var _ = Describe("Manager", Ordered, func() {
 				// Wait for port-forward to be working
 				time.Sleep(time.Second * 5)
 
-				// TODO: dont rely on ZBCTL
-				cmd = exec.Command("zbctl", "status", "--insecure")
-				output, err := utils.Run(cmd)
-				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
+				get, err := http.Get("http://localhost:9600/actuator/cluster")
 				g.Expect(err).NotTo(HaveOccurred())
-				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", output)
-				g.Expect(output).To(ContainSubstring("Cluster size: 3"))
+				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
+				defer get.Body.Close()
+				g.Expect(get.StatusCode).To(Equal(http.StatusOK))
+				body, _ := io.ReadAll(get.Body)
+				var resp clusterResponse
+				err = json.Unmarshal(body, &resp)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp.Brokers).To(HaveLen(3))
 			}
 			Eventually(verifyZeebeTopology, time.Minute*5, time.Second).Should(Succeed())
 		})
@@ -384,4 +389,27 @@ type tokenRequest struct {
 	Status struct {
 		Token string `json:"token"`
 	} `json:"status"`
+}
+
+type clusterResponse struct {
+	Version int `json:"version"`
+	Brokers []struct {
+		Id            int    `json:"id"`
+		State         string `json:"state"`
+		Version       int    `json:"version"`
+		LastUpdatedAt string `json:"lastUpdatedAt"`
+		Partitions    []struct {
+			Id       int    `json:"id"`
+			State    string `json:"state"`
+			Priority int    `json:"priority"`
+			Config   struct {
+				Exporting struct {
+					Exporters []struct {
+						Id    string `json:"id"`
+						State string `json:"state"`
+					} `json:"exporters"`
+				} `json:"exporting"`
+			} `json:"config"`
+		} `json:"partitions"`
+	} `json:"brokers"`
 }
