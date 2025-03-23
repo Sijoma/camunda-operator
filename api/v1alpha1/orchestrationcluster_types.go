@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,15 +32,31 @@ type OrchestrationClusterSpec struct {
 	ReplicationFactor int32  `json:"replicationFactor,omitempty"`
 	ClusterSize       int32  `json:"clusterSize,omitempty"`
 
+	// Resources requirements of every generated Pod. Please refer to
+	// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// for more information.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Env to pass to the statefulset
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// EnvFrom to pass as source to the statefulset
+	// +optional
+	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
+
 	Database Database `json:"database"`
 }
 
 type Database struct {
 	// +kubebuilder:validation:Enum=elasticsearch;postgresql
-	Type     DatabaseType         `json:"type"`
-	UserName string               `json:"userName,omitempty"`
-	Password v1.SecretKeySelector `json:"password,omitempty"`
-	HostName string               `json:"hostName,omitempty"`
+	Type     DatabaseType             `json:"type"`
+	UserName string                   `json:"userName,omitempty"`
+	Password corev1.SecretKeySelector `json:"password,omitempty"`
+	HostName string                   `json:"hostName,omitempty"`
 }
 
 type DatabaseType string

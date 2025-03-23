@@ -1,0 +1,175 @@
+metadata:
+  creationTimestamp: null
+  name: camunda-orchestration
+  namespace: camunda-orchestration-namespace
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      cluster: camunda-orchestration
+      operator-managed: "true"
+  serviceName: camunda-orchestration
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        cluster: camunda-orchestration
+        operator-managed: "true"
+    spec:
+      containers:
+      - env:
+        - name: ZEEBE_BROKER_CLUSTER_NODEID
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+        - name: ZEEBE_BROKER_CLUSTER_INITIALCONTACTPOINTS
+          value: camunda-orchestration-0.camunda-orchestration.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-1.camunda-orchestration.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-2.camunda-orchestration.camunda-orchestration-namespace.svc.cluster.local:26502
+        - name: ZEEBE_BROKER_CLUSTER_PARTITIONS_COUNT
+          value: "3"
+        - name: ZEEBE_BROKER_CLUSTER_REPLICATION_FACTOR
+          value: "3"
+        - name: ZEEBE_BROKER_CLUSTER_CLUSTER_SIZE
+          value: "3"
+        - name: SPRING_PROFILES_ACTIVE
+          value: identity,operate,broker,consolidated-auth
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_CLASSNAME
+          value: io.camunda.exporter.CamundaExporter
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_URL
+          value: localhost:9205
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_USERNAME
+          value: my-username
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_CLASSNAME
+          value: io.camunda.zeebe.exporter.ElasticsearchExporter
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL
+          value: localhost:9205
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_AUTHENTICATION_USERNAME
+          value: my-username
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_AUTHENTICATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: CAMUNDA_DATABASE_CONNECT_TYPE
+          value: elasticsearch
+        - name: CAMUNDA_DATABASE_CONNECT_URL
+          value: localhost:9205
+        - name: CAMUNDA_DATABASE_CONNECT_CLUSTERNAME
+          value: elasticsearch
+        - name: CAMUNDA_DATABASE_CONNECT_USERNAME
+          value: my-username
+        - name: CAMUNDA_DATABASE_CONNECT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: CAMUNDA_OPERATE_DATABASE
+          value: elasticsearch
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_URL
+          value: localhost:9205
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_PREFIX
+          value: zeebe-record
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_CLUSTERNAME
+          value: elasticsearch
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_USERNAME
+          value: my-username
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_URL
+          value: localhost:9205
+        - name: CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_USERNAME
+          value: my-username
+        - name: CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: CAMUNDA_TASKLIST_DATABASE
+          value: elasticsearch
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_URL
+          value: localhost:9205
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_PREFIX
+          value: zeebe-record
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_CLUSTERNAME
+          value: elasticsearch
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_USERNAME
+          value: my-username
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_URL
+          value: localhost:9205
+        - name: CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_USERNAME
+          value: my-username
+        - name: CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: CAMUNDA_ZEEBE_ELASTICSEARCH_URL
+          value: localhost:9205
+        - name: CAMUNDA_ZEEBE_ELASTICSEARCH_USERNAME
+          value: my-username
+        - name: CAMUNDA_ZEEBE_ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        envFrom:
+        - configMapRef:
+            name: camunda-orchestration-configmap
+        image: camunda/camunda:8.8.0-alpha1
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: management
+        name: camunda
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9600
+          name: management
+        - containerPort: 26500
+          name: gateway
+        - containerPort: 26501
+          name: command
+        - containerPort: 26502
+          name: internal
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: management
+        resources: {}
+        startupProbe:
+          httpGet:
+            path: /actuator/health/startup
+            port: management
+        volumeMounts:
+        - mountPath: /usr/local/zeebe/data
+          name: data
+  updateStrategy: {}
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+    status: {}
+status:
+  availableReplicas: 0
+  replicas: 0

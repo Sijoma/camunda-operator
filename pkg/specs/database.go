@@ -35,7 +35,7 @@ func exporterEnv(
 ) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name:  fmt.Sprintf("ZEEBE_BROKER_EXPORTERS_%s_CLASS_NAME", name),
+			Name:  fmt.Sprintf("ZEEBE_BROKER_EXPORTERS_%s_CLASSNAME", name),
 			Value: className,
 		},
 		{
@@ -106,6 +106,51 @@ func operateDatabase(
 	password corev1.SecretKeySelector,
 ) []corev1.EnvVar {
 	const app = "OPERATE"
+	return []corev1.EnvVar{
+		{
+			Name:  fmt.Sprintf("CAMUNDA_%s_DATABASE", app),
+			Value: "elasticsearch",
+		},
+		{
+			Name:  fmt.Sprintf("CAMUNDA_%s_ELASTICSEARCH_URL", app),
+			Value: hostName,
+		},
+		{
+			Name:  fmt.Sprintf("CAMUNDA_%s_ELASTICSEARCH_PREFIX", app),
+			Value: "zeebe-record",
+		},
+		{
+			Name:  fmt.Sprintf("CAMUNDA_%s_ELASTICSEARCH_CLUSTERNAME", app),
+			Value: "elasticsearch",
+		},
+		{
+			Name:  fmt.Sprintf("CAMUNDA_%s_ELASTICSEARCH_USERNAME", app),
+			Value: username,
+		},
+		{
+			Name:      fmt.Sprintf("CAMUNDA_%s_ELASTICSEARCH_PASSWORD", app),
+			ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &password},
+		},
+		{
+			Name:  fmt.Sprintf("CAMUNDA_%s_ZEEBEELASTICSEARCH_URL", app),
+			Value: hostName,
+		},
+		{
+			Name:  fmt.Sprintf("CAMUNDA_%s_ZEEBEELASTICSEARCH_USERNAME", app),
+			Value: username,
+		},
+		{
+			Name:      fmt.Sprintf("CAMUNDA_%s_ZEEBEELASTICSEARCH_PASSWORD", app),
+			ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &password},
+		},
+	}
+}
+
+func tasklistDatabase(
+	hostName, username string,
+	password corev1.SecretKeySelector,
+) []corev1.EnvVar {
+	const app = "TASKLIST"
 	return []corev1.EnvVar{
 		{
 			Name:  fmt.Sprintf("CAMUNDA_%s_DATABASE", app),

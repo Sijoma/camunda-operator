@@ -75,6 +75,10 @@ func CreateCamundaStatefulSet(
 }
 
 func createPodTemplate(camunda v1alpha1.OrchestrationCluster, labels map[string]string) corev1.PodTemplateSpec {
+	// TODO: Make it override the static predefined values
+	fullEnv := camunda.Spec.Env
+	fullEnv = append(fullEnv, env(camunda)...)
+
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labels,
@@ -84,11 +88,13 @@ func createPodTemplate(camunda v1alpha1.OrchestrationCluster, labels map[string]
 				{
 					Name:           "camunda",
 					Image:          "camunda/camunda:" + camunda.Spec.Version,
+					Resources:      camunda.Spec.Resources,
 					Ports:          createPorts(),
 					LivenessProbe:  livenessProbe(),
 					ReadinessProbe: readinessProbe(),
 					StartupProbe:   startupProbe(),
-					Env:            env(camunda),
+					Env:            fullEnv,
+					EnvFrom:        camunda.Spec.EnvFrom,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "data",
@@ -213,7 +219,7 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 		},
 		{
 			Name:  "SPRING_PROFILES_ACTIVE",
-			Value: "broker,operate",
+			Value: "identity,operate,broker,consolidated-auth",
 		},
 	}
 
@@ -235,6 +241,11 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 			camunda.Spec.Database.Password,
 		)...)
 		e = append(e, operateDatabase(
+			camunda.Spec.Database.HostName,
+			camunda.Spec.Database.UserName,
+			camunda.Spec.Database.Password,
+		)...)
+		e = append(e, tasklistDatabase(
 			camunda.Spec.Database.HostName,
 			camunda.Spec.Database.UserName,
 			camunda.Spec.Database.Password,
