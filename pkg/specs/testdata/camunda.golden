@@ -150,7 +150,10 @@ spec:
           httpGet:
             path: /actuator/health/readiness
             port: management
-        resources: {}
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
         startupProbe:
           httpGet:
             path: /actuator/health/startup
