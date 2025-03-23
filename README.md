@@ -10,13 +10,19 @@ Operator for Camunda - Use at your own risk. This is an alpha version.
 apiVersion: core.camunda.io/v1alpha1
 kind: OrchestrationCluster
 metadata:
-  name: orchestrationcluster-sample
-  namespace: your-namespace
+  name: camunda
 spec:
-  version: 8.7.0-alpha3
+  version: 8.8.0-SNAPSHOT
   clusterSize: 3
   partitionCount: 3
   replicationFactor: 3
+  resources:
+    requests:
+      cpu: 600Mi
+      memory: 600Mi
+    limits:
+      cpu: 600Mi
+      memory: 600Mi
   database:
     type: elasticsearch
     hostName: "http://elasticsearch-es-http:9200"
@@ -24,7 +30,7 @@ spec:
     password:
       key: elastic
       name: elasticsearch-es-elastic-user
-      optional: false
+
 ```
 
 ## Getting Started
