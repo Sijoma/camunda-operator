@@ -222,3 +222,19 @@ mv $(1) $(1)-$(3) ;\
 } ;\
 ln -sf $(1)-$(3) $(1)
 endef
+
+
+GOLDEN_TEST_FILE_LIST = $(shell find . -type f -name "*.golden")
+GOLDEN_TEST_PACKAGE_LIST = $(shell grep --include=\*.go  -rl . -e 'updategolden' | xargs dirname | uniq)
+
+clean-golden-tests:
+## golden files have the .golden extension
+	@for GOLDEN_TEST_FILE in $(GOLDEN_TEST_FILE_LIST); do rm -f $$GOLDEN_TEST_FILE; done
+
+.PHONY: update-golden-tests
+update-golden-tests: generate fmt vet clean-golden-tests ## update golden files
+## golden files are located in packages with go files with `updategolden` flag
+	for GOLDEN_TEST_PACKAGE in $(GOLDEN_TEST_PACKAGE_LIST); do \
+		KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
+		go test $$GOLDEN_TEST_PACKAGE -v -args -updategolden; \
+		done

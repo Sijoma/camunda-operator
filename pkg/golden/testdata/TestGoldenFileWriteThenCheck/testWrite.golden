@@ -1,0 +1,12 @@
+metadata:
+  creationTimestamp: null
+  name: goldentest
+spec:
+  containers:
+  - command:
+    - sleep
+    - "1"
+    image: busybox
+    name: busybox
+    resources: {}
+status: {}

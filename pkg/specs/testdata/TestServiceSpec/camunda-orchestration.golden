@@ -1,0 +1,28 @@
+metadata:
+  creationTimestamp: null
+  name: camunda-orchestration
+  namespace: camunda-orchestration-namespace
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 0
+  - name: management
+    port: 9600
+    targetPort: 0
+  - name: gateway
+    port: 26500
+    targetPort: 0
+  - name: command
+    port: 26501
+    targetPort: 0
+  - name: internal
+    port: 26502
+    targetPort: 0
+  publishNotReadyAddresses: true
+  selector:
+    cluster: camunda-orchestration
+    operator-managed: "true"
+status:
+  loadBalancer: {}

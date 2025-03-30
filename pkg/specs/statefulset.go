@@ -42,7 +42,10 @@ func CreateCamundaStatefulSet(
 ) *appsv1.StatefulSet {
 	labels := createLabels(camunda)
 	return &appsv1.StatefulSet{
-		TypeMeta: metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StatefulSet",
+			APIVersion: "apps/v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      camunda.Name,
 			Namespace: camunda.Namespace,
@@ -240,12 +243,14 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 			camunda.Spec.Database.UserName,
 			camunda.Spec.Database.Password,
 		)...)
-		e = append(e, operateDatabase(
+		e = append(e, appDatabase(
+			"OPERATE",
 			camunda.Spec.Database.HostName,
 			camunda.Spec.Database.UserName,
 			camunda.Spec.Database.Password,
 		)...)
-		e = append(e, tasklistDatabase(
+		e = append(e, appDatabase(
+			"TASKLIST",
 			camunda.Spec.Database.HostName,
 			camunda.Spec.Database.UserName,
 			camunda.Spec.Database.Password,
