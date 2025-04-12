@@ -12,7 +12,7 @@ kind: OrchestrationCluster
 metadata:
   name: camunda
 spec:
-  version: 8.8.0-SNAPSHOT
+  version: 8.7.1
   clusterSize: 3
   partitionCount: 3
   replicationFactor: 3

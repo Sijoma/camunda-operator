@@ -26,7 +26,7 @@ import (
 
 // OrchestrationClusterSpec defines the desired state of OrchestrationCluster.
 type OrchestrationClusterSpec struct {
-	// +default:value="8.7.0-alpha3"
+	// +default:value="8.7.1"
 	Version           string `json:"version"`
 	PartitionCount    int32  `json:"partitionCount,omitempty"`
 	ReplicationFactor int32  `json:"replicationFactor,omitempty"`
