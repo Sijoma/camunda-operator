@@ -313,7 +313,7 @@ spec:
                     type: object
                 type: object
               version:
-                default: 8.7.0-alpha3
+                default: 8.7.1
                 type: string
             required:
             - database
