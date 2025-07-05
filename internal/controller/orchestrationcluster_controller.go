@@ -75,7 +75,7 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	resources, err := bundle.BuildResources()
+	resources, err := bundle.Resources()
 	if err != nil {
 		log.FromContext(ctx).Error(err, "Error building resources for OrchestrationCluster",
 			"cluster", orchestrationCluster.Name,
@@ -151,7 +151,7 @@ func (r *OrchestrationClusterReconciler) checkScaling(ctx context.Context, clust
 
 	actuatorURL := &url.URL{
 		Scheme: "http",
-		Host:   fmt.Sprintf("%s:%d", svc.Name, actuatorPort),
+		Host:   fmt.Sprintf("%s.%s.svc.cluster.local:%d", svc.Name, svc.Namespace, actuatorPort),
 	}
 
 	managementClient, err := management.NewClient(
