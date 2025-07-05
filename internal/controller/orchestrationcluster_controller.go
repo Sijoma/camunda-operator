@@ -18,18 +18,23 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/sijoma/camunda-go-sdk/management"
+
 	corev1alpha1 "github.com/camunda/camunda-operator/api/v1alpha1"
-	"github.com/camunda/camunda-operator/pkg/specs"
+	"github.com/camunda/camunda-operator/pkg/bundles"
 )
 
 // OrchestrationClusterReconciler reconciles a OrchestrationCluster object
@@ -61,29 +66,50 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	svc := specs.CreateService(*orchestrationCluster)
-	newSvc := svc.Spec.DeepCopy()
-	_, err = ctrl.CreateOrUpdate(ctx, r.Client, svc, func() error {
-		svc.Spec = *newSvc
-		return ctrl.SetControllerReference(orchestrationCluster, svc, r.Scheme)
-	})
+	bundle, err := bundles.New(*orchestrationCluster)
 	if err != nil {
+		log.FromContext(ctx).Error(err, "Error creating bundle for OrchestrationCluster",
+			"cluster", orchestrationCluster.Name,
+			"version", orchestrationCluster.Spec.Version,
+		)
 		return ctrl.Result{}, err
 	}
 
-	sts := specs.CreateCamundaStatefulSet(*orchestrationCluster)
-	newSpec := sts.Spec.DeepCopy()
-	var ready bool
-	_, err = ctrl.CreateOrUpdate(ctx, r.Client, sts, func() error {
-		sts.Spec = *newSpec
-		// TODO: Check Topology for healthiness
-		ready = sts.Status.ReadyReplicas > *newSpec.Replicas/2
-		return ctrl.SetControllerReference(orchestrationCluster, sts, r.Scheme)
-	})
+	resources, err := bundle.BuildResources()
 	if err != nil {
+		log.FromContext(ctx).Error(err, "Error building resources for OrchestrationCluster",
+			"cluster", orchestrationCluster.Name,
+			"version", orchestrationCluster.Spec.Version,
+		)
 		return ctrl.Result{}, err
 	}
 
+	for _, resource := range resources {
+		// Create or update the resource
+		if err := ctrl.SetControllerReference(orchestrationCluster, resource, r.Scheme); err != nil {
+			log.FromContext(ctx).Error(err, "Failed to set controller reference", "resource", resource.GetName())
+			return ctrl.Result{}, err
+		}
+
+		merged := k8sLabels.Merge(resource.GetLabels(), managedLabels(orchestrationCluster))
+		resource.SetLabels(merged)
+
+		if err := r.Client.Patch(ctx, resource, client.Apply, client.ForceOwnership, client.FieldOwner("orchestrationcluster-controller")); err != nil {
+			log.FromContext(ctx).Error(err, "Failed to create or patch resource", "resource", resource.GetName())
+			return ctrl.Result{}, err
+		}
+	}
+
+	err = r.checkScaling(ctx, orchestrationCluster)
+	if err != nil {
+		log.FromContext(ctx).Error(err,
+			"Error checking scaling",
+			"cluster", orchestrationCluster.Name,
+		)
+	}
+
+	// Check if the cluster is ready
+	ready := true
 	// TODO: Implement proper status
 	conditionStatus := metav1.ConditionFalse
 	if ready {
@@ -114,4 +140,78 @@ func (r *OrchestrationClusterReconciler) SetupWithManager(mgr ctrl.Manager) erro
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Complete(r)
+}
+
+func (r *OrchestrationClusterReconciler) checkScaling(ctx context.Context, cluster *corev1alpha1.OrchestrationCluster) error {
+	actuatorPort := int32(9600)
+	svc, err := lookupService(ctx, r.Client, cluster, actuatorPort)
+	if err != nil {
+		return fmt.Errorf("failed to lookup service for cluster %s: %w", cluster.Name, err)
+	}
+
+	actuatorURL := &url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%s:%d", svc.Name, actuatorPort),
+	}
+
+	managementClient, err := management.NewClient(
+		management.WithBaseURL(*actuatorURL),
+	)
+	if err != nil {
+		return err
+	}
+
+	topo, err := managementClient.Cluster.Topology(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(topo.PendingChange.Pending) > 0 {
+		// If there are pending changes, we can assume that the cluster is scaling.
+		// We can update the status or log this information as needed.
+		log.FromContext(ctx).Info("Cluster is scaling", "pendingChanges", topo.PendingChange.Pending)
+	} else {
+		log.FromContext(ctx).Info("No pending changes in cluster topology")
+	}
+
+	if len(topo.Brokers) != int(cluster.Spec.ClusterSize) {
+		log.FromContext(ctx).
+			Info("Cluster size does not match desired size",
+				"desiredSize", cluster.Spec.ClusterSize,
+				"currentSize", len(topo.Brokers))
+	}
+
+	return nil
+}
+
+func managedLabels(cluster *corev1alpha1.OrchestrationCluster) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/managed-by": "orchestrationcluster-controller",
+		"app.kubernetes.io/instance":   cluster.Name,
+		"app.kubernetes.io/version":    cluster.Spec.Version,
+	}
+}
+
+func lookupService(ctx context.Context, cli client.Client, cluster *corev1alpha1.OrchestrationCluster, desiredPort int32) (*corev1.Service, error) {
+	selector := client.MatchingLabels(managedLabels(cluster))
+	var svcList corev1.ServiceList
+	if err := cli.List(ctx, &svcList, selector); err != nil {
+		return nil, err
+	}
+	if len(svcList.Items) == 0 {
+		return nil, fmt.Errorf("no service found for cluster %s", cluster.Name)
+	}
+	svc := &svcList.Items[0]
+	var svcName string
+	for _, port := range svc.Spec.Ports {
+		if port.Port == desiredPort {
+			svcName = svc.Name
+			break
+		}
+	}
+	if svcName == "" {
+		return nil, fmt.Errorf("no service port 9600 found for cluster %s", cluster.Name)
+	}
+
+	return svc, nil
 }

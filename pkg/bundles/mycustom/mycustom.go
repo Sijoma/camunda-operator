@@ -1,4 +1,4 @@
-package specs
+package mycustom
 
 import (
 	"fmt"
@@ -11,12 +11,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/camunda/camunda-operator/api/v1alpha1"
 )
 
-func CreateService(camunda v1alpha1.OrchestrationCluster) *corev1.Service {
+type Strategy struct{}
+
+func (m Strategy) BuildResources(osc v1alpha1.OrchestrationCluster) ([]client.Object, error) {
+	svc := createService(osc)
+	sts := createCamundaStatefulSet(osc)
+
+	resources := []client.Object{svc, sts}
+	return resources, nil
+}
+
+func createService(camunda v1alpha1.OrchestrationCluster) *corev1.Service {
 	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      camunda.Name,
 			Namespace: camunda.Namespace,
@@ -32,12 +47,13 @@ func CreateService(camunda v1alpha1.OrchestrationCluster) *corev1.Service {
 
 func createLabels(camunda v1alpha1.OrchestrationCluster) map[string]string {
 	return map[string]string{
-		"cluster":          camunda.Name,
-		"operator-managed": "true",
+		"cluster":                   camunda.Name,
+		"app.kubernetes.io/version": camunda.Spec.Version,
+		"operator-managed":          "true",
 	}
 }
 
-func CreateCamundaStatefulSet(
+func createCamundaStatefulSet(
 	camunda v1alpha1.OrchestrationCluster,
 ) *appsv1.StatefulSet {
 	labels := createLabels(camunda)
@@ -224,6 +240,14 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 			Name:  "SPRING_PROFILES_ACTIVE",
 			Value: "identity,operate,broker,consolidated-auth",
 		},
+		{
+			Name:  "CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED",
+			Value: "true",
+		},
+		{
+			Name:  "CAMUNDA_SECUIRTY_AUTHENTICATION_UNPROTECTEDAPI",
+			Value: "false",
+		},
 	}
 
 	if camunda.Spec.Database.Type == v1alpha1.ElasticsearchDatabaseType {
@@ -267,7 +291,7 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 
 func getPodAddresses(camunda v1alpha1.OrchestrationCluster) string {
 	podAddresses := make([]string, camunda.Spec.ClusterSize)
-	svc := CreateService(camunda)
+	svc := createService(camunda)
 
 	for podIndex := int32(0); podIndex < camunda.Spec.ClusterSize; podIndex++ {
 		podAddresses[podIndex] = fmt.Sprintf(

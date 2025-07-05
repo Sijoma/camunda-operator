@@ -1,4 +1,4 @@
-package specs_test
+package mycustom
 
 import (
 	"flag"
@@ -10,11 +10,10 @@ import (
 
 	"github.com/camunda/camunda-operator/api/v1alpha1"
 	goldens "github.com/camunda/camunda-operator/pkg/golden"
-	"github.com/camunda/camunda-operator/pkg/specs"
 )
 
 var (
-	update = flag.Bool("updategolden", false, "update the golden files of this test")
+	update = flag.Bool("updategolden", true, "update the golden files of this test")
 )
 
 func apiSpec() v1alpha1.OrchestrationCluster {
@@ -54,7 +53,7 @@ func apiSpec() v1alpha1.OrchestrationCluster {
 }
 func TestStatefulSetSpecs(t *testing.T) {
 
-	got := specs.CreateCamundaStatefulSet(apiSpec())
+	got := createCamundaStatefulSet(apiSpec())
 	golden, err := goldens.New(t, apiSpec().Name)
 	if err != nil {
 		t.Error("unable to create golden file", err)
@@ -67,7 +66,7 @@ func TestStatefulSetSpecs(t *testing.T) {
 }
 
 func TestServiceSpec(t *testing.T) {
-	got := specs.CreateService(apiSpec())
+	got := createService(apiSpec())
 	golden, err := goldens.New(t, apiSpec().Name)
 	if err != nil {
 		t.Error("unable to create golden file", err)
