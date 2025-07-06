@@ -56,7 +56,7 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 	_ = log.FromContext(ctx)
 
 	orchestrationCluster := new(corev1alpha1.OrchestrationCluster)
-	err := r.Client.Get(ctx, req.NamespacedName, orchestrationCluster)
+	err := r.Get(ctx, req.NamespacedName, orchestrationCluster)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -89,7 +89,7 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 		merged := k8sLabels.Merge(resource.GetLabels(), managedLabels(orchestrationCluster))
 		resource.SetLabels(merged)
 
-		if err := r.Client.Patch(ctx, resource, client.Apply, client.ForceOwnership, client.FieldOwner("orchestrationcluster-controller")); err != nil {
+		if err := r.Patch(ctx, resource, client.Apply, client.ForceOwnership, client.FieldOwner("orchestrationcluster-controller")); err != nil {
 			log.FromContext(ctx).Error(err, "Failed to create or patch resource", "resource", resource.GetName())
 			return ctrl.Result{}, err
 		}
