@@ -19,12 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch Tags
-        run: git fetch --tags --force
-
-      - name: Check Tag
-        run: git describe --tags --always
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -43,6 +37,7 @@ jobs:
           version: '~> v2'
           args: release --clean
         env:
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Installer YAML
