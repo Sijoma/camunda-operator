@@ -69,7 +69,7 @@ EOF
 
 4. Install Camunda Operator
 ```shell
-kubectl apply -f https://github.com/Sijoma/camunda-operator/releases/download/v0.0.1-rc4/install.yaml
+kubectl apply -f https://github.com/Sijoma/camunda-operator/releases/latest/download/install.yaml
 ```
 
 5. Deploy OrchestrationCluster Resource
