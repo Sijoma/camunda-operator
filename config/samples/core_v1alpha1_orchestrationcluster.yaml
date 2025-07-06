@@ -1,22 +1,12 @@
 apiVersion: core.camunda.io/v1alpha1
 kind: OrchestrationCluster
 metadata:
-  labels:
-    app.kubernetes.io/name: camunda-operator
-    app.kubernetes.io/managed-by: kustomize
   name: camunda
 spec:
-  version: 8.7.1
-  clusterSize: 3
+  version: 8.7.7
+  clusterSize: 1
   partitionCount: 3
   replicationFactor: 3
-  resources:
-    requests:
-      cpu: 600m
-      memory: 600Mi
-    limits:
-      cpu: 600m
-      memory: 600Mi
   database:
     type: elasticsearch
     hostName: "http://elasticsearch-es-http:9200"

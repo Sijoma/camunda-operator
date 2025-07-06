@@ -34,109 +34,66 @@ spec:
 
 ## Getting Started
 
-### Prerequisites
-- go version v1.23.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+### Deploying the Operator with dependencies
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+1. Install Prerequisites 
+- kubectl 
+- Kubernetes cluster (v1.24+ recommended)
 
-```sh
-make docker-build docker-push IMG=<some-registry>/camunda-operator:tag
+2. Install ECK Operator (Elasticsearch) [Here](https://www.elastic.co/docs/deploy-manage/deploy/cloud-on-k8s/install-using-yaml-manifest-quickstart)
+```shell
+kubectl create -f https://download.elastic.co/downloads/eck/3.0.0/crds.yaml
+kubectl apply -f https://download.elastic.co/downloads/eck/3.0.0/operator.yaml
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+3. Deploy Elasticsearch cluster:
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+spec:
+  version: 8.17.1
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        node.store.allow_mmap: false
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+EOF
+``
 
-**Install the CRDs into the cluster:**
-
-```sh
-make install
+4. Install Camunda Operator
+```shell
+kubectl apply -f https://github.com/Sijoma/camunda-operator/releases/download/v0.0.1-rc4/install.yaml
 ```
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
-
+5. Deploy OrchestrationCluster Resource
 ```sh
-make deploy IMG=<some-registry>/camunda-operator:tag
+cat <<EOF | kubectl apply -f -
+apiVersion: core.camunda.io/v1alpha1
+kind: OrchestrationCluster
+metadata:
+  name: camunda
+spec:
+  version: 8.7.7
+  clusterSize: 3
+  partitionCount: 3
+  replicationFactor: 3
+  database:
+    type: elasticsearch
+    hostName: "http://elasticsearch-es-http:9200"
+    userName: elastic
+    password:
+      key: elastic
+      name: elasticsearch-es-elastic-user
+      optional: false
+EOF
 ```
-
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
-
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
-```
-
->**NOTE**: Ensure that the samples has default values to test it out.
-
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
-
-```sh
-kubectl delete -k config/samples/
-```
-
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
-```sh
-make undeploy
-```
-
-## Project Distribution
-
-Following the options to release and provide this solution to the users.
-
-### By providing a bundle with all YAML files
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/camunda-operator:tag
-```
-
-**NOTE:** The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without its
-dependencies.
-
-2. Using the installer
-
-Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
-the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/camunda-operator/<tag or branch>/dist/install.yaml
-```
-
-### By providing a Helm Chart
-
-1. Build the chart using the optional helm plugin
-
-```sh
-kubebuilder edit --plugins=helm/v1-alpha
-```
-
-2. See that a chart was generated under 'dist/chart', and users
-can obtain this solution from there.
-
-**NOTE:** If you change the project, you need to update the Helm Chart
-using the same command above to sync the latest changes. Furthermore,
-if you create webhooks, you need to use the above command with
-the '--force' flag and manually ensure that any custom configuration
-previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
-is manually re-applied afterwards.
 
 ## Contributing
 
