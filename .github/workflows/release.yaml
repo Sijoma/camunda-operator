@@ -19,6 +19,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch Tags
+        run: git fetch --tags --force
+
+      - name: Check Tag
+        run: git describe --tags --always
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
