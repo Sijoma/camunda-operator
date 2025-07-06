@@ -28,6 +28,19 @@ builds:
       - arm64
       - amd64
 
+archives:
+  - id: install-yaml
+    name_template: "{{ .ProjectName }}_{{ .Version }}"
+    formats: ["zip", "tar.gz"]
+    files:
+      - dist/install.yaml
+    wrap_in_directory: true  # Optional, includes files in a directory inside archive
+    hooks:
+      before:
+        - cmd: make build-installer IMG=ghcr.io/sijoma/camunda-operator:{{ .Env.TAG }}
+          env:
+            - "TAG={{ .Version }}" # specify hook level environment variables
+
 changelog:
   sort: asc
   groups:
