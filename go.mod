@@ -2,7 +2,7 @@ module github.com/camunda/camunda-operator
 
 go 1.24
 
-toolchain go1.24.0
+toolchain go1.24.4
 
 godebug default=go1.24
 
