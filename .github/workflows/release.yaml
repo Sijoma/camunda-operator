@@ -38,3 +38,12 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Installer YAML
+        run: make build-installer IMG=ghcr.io/sijoma/camunda-operator:${{ github.ref_name }}
+
+      - name: Add to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/camunda-operator.yaml
+          tag_name: ${{ github.ref_name }}
