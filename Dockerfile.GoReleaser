@@ -1,0 +1,4 @@
+FROM scratch
+COPY manager /manager
+ENTRYPOINT ["/manager"]
+USER 65532:65532
