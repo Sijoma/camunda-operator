@@ -319,6 +319,7 @@ var _ = Describe("Manager", Ordered, func() {
 				get, err := http.Get("http://localhost:9600/actuator/cluster")
 				g.Expect(err).NotTo(HaveOccurred())
 				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
+				//nolint:errcheck
 				defer get.Body.Close()
 				g.Expect(get.StatusCode).To(Equal(http.StatusOK))
 				body, _ := io.ReadAll(get.Body)

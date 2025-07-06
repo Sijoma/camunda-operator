@@ -12,17 +12,17 @@ kind: OrchestrationCluster
 metadata:
   name: camunda
 spec:
-  version: 8.7.1
+  version: 8.7.7
   clusterSize: 3
   partitionCount: 3
   replicationFactor: 3
   resources:
     requests:
-      cpu: 600Mi
-      memory: 600Mi
+      cpu: 1000m
+      memory: 1500Mi
     limits:
-      cpu: 600Mi
-      memory: 600Mi
+      cpu: 1500m
+      memory: 1500Mi
   database:
     type: elasticsearch
     hostName: "http://elasticsearch-es-http:9200"
@@ -30,7 +30,6 @@ spec:
     password:
       key: elastic
       name: elasticsearch-es-elastic-user
-
 ```
 
 ## Getting Started

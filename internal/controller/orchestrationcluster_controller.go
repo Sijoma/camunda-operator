@@ -100,33 +100,12 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 		}
 	}
 
-	err = r.checkScaling(ctx, orchestrationCluster)
+	err = r.checkCamunda(ctx, orchestrationCluster)
 	if err != nil {
 		log.FromContext(ctx).Error(err,
-			"Error checking scaling",
+			"Error checking Camunda",
 			"cluster", orchestrationCluster.Name,
 		)
-	}
-
-	// Check if the cluster is ready
-	ready := true
-	// TODO: Implement proper status
-	conditionStatus := metav1.ConditionFalse
-	if ready {
-		conditionStatus = metav1.ConditionTrue
-	}
-	changed := meta.SetStatusCondition(&orchestrationCluster.Status.Conditions, metav1.Condition{
-		Type:               "Ready",
-		Status:             conditionStatus,
-		ObservedGeneration: orchestrationCluster.Generation,
-		Reason:             "CamundaReplicasReady",
-		Message:            "replicas are ready",
-	})
-	if changed {
-		err = r.Status().Update(ctx, orchestrationCluster)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
 	}
 
 	return ctrl.Result{}, nil
@@ -142,7 +121,7 @@ func (r *OrchestrationClusterReconciler) SetupWithManager(mgr ctrl.Manager) erro
 		Complete(r)
 }
 
-func (r *OrchestrationClusterReconciler) checkScaling(ctx context.Context, cluster *corev1alpha1.OrchestrationCluster) error {
+func (r *OrchestrationClusterReconciler) checkCamunda(ctx context.Context, cluster *corev1alpha1.OrchestrationCluster) error {
 	actuatorPort := int32(9600)
 	svc, err := lookupService(ctx, r.Client, cluster, actuatorPort)
 	if err != nil {
@@ -166,6 +145,9 @@ func (r *OrchestrationClusterReconciler) checkScaling(ctx context.Context, clust
 		return err
 	}
 
+	// Check if the cluster is ready
+	ready := false
+
 	if len(topo.PendingChange.Pending) > 0 {
 		// If there are pending changes, we can assume that the cluster is scaling.
 		// We can update the status or log this information as needed.
@@ -179,6 +161,28 @@ func (r *OrchestrationClusterReconciler) checkScaling(ctx context.Context, clust
 			Info("Cluster size does not match desired size",
 				"desiredSize", cluster.Spec.ClusterSize,
 				"currentSize", len(topo.Brokers))
+	}
+
+	// TODO: Implement proper status
+	if len(topo.Brokers) == int(cluster.Spec.ClusterSize) && topo.Version > 0 {
+		ready = true
+	}
+	conditionStatus := metav1.ConditionTrue
+	if ready {
+		conditionStatus = metav1.ConditionTrue
+	}
+	changed := meta.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
+		Type:               "Ready",
+		Status:             conditionStatus,
+		ObservedGeneration: cluster.Generation,
+		Reason:             "CamundaReplicasReady",
+		Message:            "replicas are ready",
+	})
+	if changed {
+		err = r.Status().Update(ctx, cluster)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

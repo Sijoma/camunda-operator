@@ -6,17 +6,17 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: camunda
 spec:
-  version: 8.7.1
+  version: 8.7.7
   clusterSize: 3
   partitionCount: 3
   replicationFactor: 3
   resources:
     requests:
-      cpu: 600m
-      memory: 600Mi
+      cpu: 1000m
+      memory: 1500Mi
     limits:
-      cpu: 600m
-      memory: 600Mi
+      cpu: 1500m
+      memory: 1500Mi
   database:
     type: elasticsearch
     hostName: "http://elasticsearch-es-http:9200"

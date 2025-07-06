@@ -34,12 +34,15 @@ func New(osc v1alpha1.OrchestrationCluster) (*Bundle, error) {
 	return newWithStrategies(osc, strategies)
 }
 
-func newWithStrategies(osc v1alpha1.OrchestrationCluster, supportedStrategies map[string]VersionStrategy) (*Bundle, error) {
+func newWithStrategies(
+	osc v1alpha1.OrchestrationCluster,
+	strategies map[string]VersionStrategy,
+) (*Bundle, error) {
 	version, err := semver.NewVersion(osc.Spec.Version)
 	if err != nil {
 		return nil, fmt.Errorf("invalid version format: %s", osc.Spec.Version)
 	}
-	for constraint, strategy := range supportedStrategies {
+	for constraint, strategy := range strategies {
 		constraintVersion, err := semver.NewConstraint(constraint)
 		if err != nil {
 			return nil, fmt.Errorf("invalid version constraint: %s", constraint)

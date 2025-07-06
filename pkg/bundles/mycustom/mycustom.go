@@ -238,14 +238,14 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 		},
 		{
 			Name:  "SPRING_PROFILES_ACTIVE",
-			Value: "identity,operate,broker,consolidated-auth",
+			Value: "identity,operate,tasklist,broker,consolidated-auth",
 		},
 		{
 			Name:  "CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED",
 			Value: "true",
 		},
 		{
-			Name:  "CAMUNDA_SECUIRTY_AUTHENTICATION_UNPROTECTEDAPI",
+			Name:  "CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI",
 			Value: "false",
 		},
 	}
