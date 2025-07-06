@@ -47,9 +47,8 @@ func createService(camunda v1alpha1.OrchestrationCluster) *corev1.Service {
 
 func createLabels(camunda v1alpha1.OrchestrationCluster) map[string]string {
 	return map[string]string{
-		"cluster":                   camunda.Name,
-		"app.kubernetes.io/version": camunda.Spec.Version,
-		"operator-managed":          "true",
+		"cluster":          camunda.Name,
+		"operator-managed": "true",
 	}
 }
 

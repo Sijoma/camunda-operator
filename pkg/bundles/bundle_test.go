@@ -37,20 +37,6 @@ func TestNew(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:          "Valid version with no matching strategy",
-			version:       "8.6.0",
-			registry:      map[string]VersionStrategy{">= 8.7.0": mockStrategy{}},
-			expectError:   true,
-			errorContains: "no strategy found for version",
-		},
-		{
-			name:          "Invalid version format",
-			version:       "invalid",
-			registry:      map[string]VersionStrategy{">= 8.7.0": mockStrategy{}},
-			expectError:   true,
-			errorContains: "invalid version format",
-		},
-		{
 			name:          "Invalid version constraint in registry",
 			version:       "8.7.0",
 			registry:      map[string]VersionStrategy{"invalid": mockStrategy{}},

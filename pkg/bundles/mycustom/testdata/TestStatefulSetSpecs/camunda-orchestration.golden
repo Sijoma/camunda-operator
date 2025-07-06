@@ -35,10 +35,10 @@ spec:
         - name: ZEEBE_BROKER_CLUSTER_CLUSTER_SIZE
           value: "3"
         - name: SPRING_PROFILES_ACTIVE
-          value: identity,operate,broker,consolidated-auth
+          value: identity,operate,tasklist,broker,consolidated-auth
         - name: CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED
           value: "true"
-        - name: CAMUNDA_SECUIRTY_AUTHENTICATION_UNPROTECTEDAPI
+        - name: CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI
           value: "false"
         - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_CLASSNAME
           value: io.camunda.exporter.CamundaExporter
@@ -51,8 +51,6 @@ spec:
             secretKeyRef:
               key: ""
               name: my-password-secret
-        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_INDEX_SHOULDWAITFORIMPORTERS
-          value: "false"
         - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_CLASSNAME
           value: io.camunda.zeebe.exporter.ElasticsearchExporter
         - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL
@@ -64,8 +62,6 @@ spec:
             secretKeyRef:
               key: ""
               name: my-password-secret
-        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_INDEX_SHOULDWAITFORIMPORTERS
-          value: "false"
         - name: CAMUNDA_DATABASE_CONNECT_TYPE
           value: elasticsearch
         - name: CAMUNDA_DATABASE_CONNECT_URL

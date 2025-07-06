@@ -31,6 +31,13 @@ func New(osc v1alpha1.OrchestrationCluster) (*Bundle, error) {
 	// Our current strategies
 	strategies := map[string]VersionStrategy{">= 8.7.0-alpha1": mycustom.Strategy{}}
 
+	// TODO: Check how we actually want to default the version.
+	// on API? How to handle updates when version is not set in CRD?
+	const defaultImageVersion = "8.7.7"
+	if osc.Spec.Version == "" {
+		osc.Spec.Version = defaultImageVersion
+	}
+
 	return newWithStrategies(osc, strategies)
 }
 
@@ -54,5 +61,7 @@ func newWithStrategies(
 			}, nil
 		}
 	}
-	return nil, fmt.Errorf("no strategy found for version: %s", osc.Spec.Version)
+
+	// If no strategy matches, return a default strategy
+	return &Bundle{core: osc, strategy: mycustom.Strategy{}}, nil
 }

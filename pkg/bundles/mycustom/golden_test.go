@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	update = flag.Bool("updategolden", true, "update the golden files of this test")
+	update = flag.Bool("updategolden", false, "update the golden files of this test")
 )
 
 func apiSpec() v1alpha1.OrchestrationCluster {
