@@ -14,15 +14,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/camunda/camunda-operator/api/v1alpha1"
+	"github.com/camunda/camunda-operator/pkg/labels"
 )
 
 type Strategy struct{}
 
 func (m Strategy) BuildResources(osc v1alpha1.OrchestrationCluster) ([]client.Object, error) {
+	svcAcc := createServiceAccount(osc)
 	svc := createService(osc)
 	sts := createCamundaStatefulSet(osc)
 
-	resources := []client.Object{svc, sts}
+	resources := []client.Object{svcAcc, svc, sts}
 	return resources, nil
 }
 
@@ -33,29 +35,22 @@ func createService(camunda v1alpha1.OrchestrationCluster) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      camunda.Name,
+			Name:      buildNameWithCore(camunda),
 			Namespace: camunda.Namespace,
+			Labels:    labels.Create(&camunda),
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP:                "None",
-			Selector:                 createLabels(camunda),
+			Selector:                 labels.CreateSelector(&camunda),
 			Ports:                    createServicePorts(),
 			PublishNotReadyAddresses: true,
 		},
 	}
 }
 
-func createLabels(camunda v1alpha1.OrchestrationCluster) map[string]string {
-	return map[string]string{
-		"cluster":          camunda.Name,
-		"operator-managed": "true",
-	}
-}
-
 func createCamundaStatefulSet(
 	camunda v1alpha1.OrchestrationCluster,
 ) *appsv1.StatefulSet {
-	labels := createLabels(camunda)
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
@@ -64,27 +59,99 @@ func createCamundaStatefulSet(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      camunda.Name,
 			Namespace: camunda.Namespace,
+			Labels:    labels.Create(&camunda),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         camunda.Name,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
 			Replicas:            ptr.To(camunda.Spec.ClusterSize),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: labels.CreateSelector(&camunda),
 			},
-			Template: createPodTemplate(camunda, labels),
-			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+			Template:             createPodTemplate(camunda),
+			VolumeClaimTemplates: createVolumeClaimTemplates(camunda),
+		},
+	}
+}
+
+func createPodTemplate(camunda v1alpha1.OrchestrationCluster) corev1.PodTemplateSpec {
+	// TODO: Make it override the static predefined values
+	fullEnv := camunda.Spec.Env
+	fullEnv = append(fullEnv, env(camunda)...)
+
+	return corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: labels.Create(&camunda),
+		},
+		Spec: corev1.PodSpec{
+			SecurityContext:    createPodSecurityContext(),
+			ServiceAccountName: buildNameWithCore(camunda),
+			Containers: []corev1.Container{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "data",
-					},
-					Spec: corev1.PersistentVolumeClaimSpec{
-						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-						Resources: corev1.VolumeResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceStorage: resource.MustParse("10Gi"),
-							},
-						},
+					Name:            "camunda",
+					Image:           "camunda/camunda:" + camunda.Spec.Version,
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Resources:       camunda.Spec.Resources,
+					Ports:           createPorts(),
+					LivenessProbe:   livenessProbe(),
+					ReadinessProbe:  readinessProbe(),
+					StartupProbe:    startupProbe(),
+					SecurityContext: securityContext(),
+					Env:             fullEnv,
+					EnvFrom:         camunda.Spec.EnvFrom,
+					VolumeMounts:    createVolumeMounts(),
+				},
+			},
+			Volumes: createVolumes(),
+		},
+	}
+}
+
+func createVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: "tmp",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "exporters",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+}
+
+func createVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "data",
+			MountPath: "/usr/local/zeebe/data",
+		},
+		{
+			Name:      "exporters",
+			MountPath: "/exporters",
+		},
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
+		},
+	}
+}
+
+func createVolumeClaimTemplates(camunda v1alpha1.OrchestrationCluster) []corev1.PersistentVolumeClaim {
+	return []corev1.PersistentVolumeClaim{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "data",
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				Resources: corev1.VolumeResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: resource.MustParse("10Gi"),
 					},
 				},
 			},
@@ -92,36 +159,22 @@ func createCamundaStatefulSet(
 	}
 }
 
-func createPodTemplate(camunda v1alpha1.OrchestrationCluster, labels map[string]string) corev1.PodTemplateSpec {
-	// TODO: Make it override the static predefined values
-	fullEnv := camunda.Spec.Env
-	fullEnv = append(fullEnv, env(camunda)...)
+func securityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               ptr.To(false),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsUser:                ptr.To(int64(1001)),
+		SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+	}
+}
 
-	return corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:           "camunda",
-					Image:          "camunda/camunda:" + camunda.Spec.Version,
-					Resources:      camunda.Spec.Resources,
-					Ports:          createPorts(),
-					LivenessProbe:  livenessProbe(),
-					ReadinessProbe: readinessProbe(),
-					StartupProbe:   startupProbe(),
-					Env:            fullEnv,
-					EnvFrom:        camunda.Spec.EnvFrom,
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "data",
-							MountPath: "/usr/local/zeebe/data",
-						},
-					},
-				},
-			},
-		},
+func createPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		FSGroup:        ptr.To(int64(1001)),
+		RunAsNonRoot:   ptr.To(true),
+		SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 	}
 }
 
@@ -190,8 +243,9 @@ func readinessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Port: intstr.FromString("management"),
-				Path: "/actuator/health/readiness",
+				Port:   intstr.FromString("management"),
+				Path:   "/actuator/health/readiness",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 	}
@@ -302,4 +356,22 @@ func getPodAddresses(camunda v1alpha1.OrchestrationCluster) string {
 		)
 	}
 	return strings.Join(podAddresses, ",")
+}
+
+func createServiceAccount(camunda v1alpha1.OrchestrationCluster) *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceAccount",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      buildNameWithCore(camunda),
+			Namespace: camunda.Namespace,
+			Labels:    labels.Create(&camunda),
+		},
+	}
+}
+
+func buildNameWithCore(camunda v1alpha1.OrchestrationCluster) string {
+	return camunda.Name + "-core"
 }

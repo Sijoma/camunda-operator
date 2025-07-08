@@ -30,6 +30,7 @@ import (
 
 	corev1alpha1 "github.com/camunda/camunda-operator/api/v1alpha1"
 	"github.com/camunda/camunda-operator/pkg/bundles"
+	"github.com/camunda/camunda-operator/pkg/labels"
 )
 
 // OrchestrationClusterReconciler reconciles a OrchestrationCluster object
@@ -42,7 +43,7 @@ type OrchestrationClusterReconciler struct {
 // +kubebuilder:rbac:groups=core.camunda.io,resources=orchestrationclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core.camunda.io,resources=orchestrationclusters/finalizers,verbs=update
 
-// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=core,resources=services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=core,resources=services/status,verbs=get
 
 // CRUD apps: statefulsets
@@ -86,7 +87,7 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 			return ctrl.Result{}, err
 		}
 
-		merged := k8sLabels.Merge(resource.GetLabels(), managedLabels(orchestrationCluster))
+		merged := k8sLabels.Merge(resource.GetLabels(), labels.Create(orchestrationCluster))
 		resource.SetLabels(merged)
 
 		if err := r.Patch(ctx, resource, client.Apply, client.ForceOwnership, client.FieldOwner("orchestrationcluster-controller")); err != nil {
@@ -116,16 +117,8 @@ func (r *OrchestrationClusterReconciler) SetupWithManager(mgr ctrl.Manager) erro
 		Complete(r)
 }
 
-func managedLabels(cluster *corev1alpha1.OrchestrationCluster) map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/managed-by": "orchestrationcluster-controller",
-		"app.kubernetes.io/instance":   cluster.Name,
-		"app.kubernetes.io/version":    cluster.Spec.Version,
-	}
-}
-
 func lookupService(ctx context.Context, cli client.Client, cluster *corev1alpha1.OrchestrationCluster, desiredPort int32) (*corev1.Service, error) {
-	selector := client.MatchingLabels(managedLabels(cluster))
+	selector := client.MatchingLabels(labels.CreateSelector(cluster))
 	var svcList corev1.ServiceList
 	if err := cli.List(ctx, &svcList, selector); err != nil {
 		return nil, err

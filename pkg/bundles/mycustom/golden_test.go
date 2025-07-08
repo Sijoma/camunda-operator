@@ -4,6 +4,7 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,7 +53,6 @@ func apiSpec() v1alpha1.OrchestrationCluster {
 	}
 }
 func TestStatefulSetSpecs(t *testing.T) {
-
 	got := createCamundaStatefulSet(apiSpec())
 	golden, err := goldens.New(t, apiSpec().Name)
 	if err != nil {
@@ -75,5 +75,25 @@ func TestServiceSpec(t *testing.T) {
 	err = golden.CheckOrUpdate(*update, got)
 	if err != nil {
 		t.Errorf("%s:\nerr:\n%v", apiSpec().Name, err)
+	}
+}
+
+func TestBuildAllGolden_Strategy(t *testing.T) {
+	m, err := Strategy{}.BuildResources(apiSpec())
+	require.NoError(t, err)
+
+	for _, object := range m {
+		t.Run(object.GetName(), func(t *testing.T) {
+
+			golden, err := goldens.New(t, object.GetObjectKind().GroupVersionKind().Kind+"-"+object.GetName())
+			if err != nil {
+				t.Error("unable to create golden file", err)
+			}
+
+			err = golden.CheckOrUpdate(*update, object)
+			if err != nil {
+				t.Errorf("%s:\nerr:\n%v", apiSpec().Name, err)
+			}
+		})
 	}
 }

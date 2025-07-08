@@ -274,7 +274,7 @@ var _ = Describe("Manager", Ordered, func() {
 			verifyCamundaUp := func(g Gomega) {
 				// Get pod name
 				cmd = exec.Command("kubectl", "get",
-					"pods", "-l", "cluster=camunda",
+					"pods", "-l", "app=camunda-platform",
 					"-o", "go-template={{ range .items }}"+
 						"{{ if not .metadata.deletionTimestamp }}"+
 						"{{ .metadata.name }}"+
@@ -302,7 +302,7 @@ var _ = Describe("Manager", Ordered, func() {
 
 			By("checking actuator cluster info")
 			verifyZeebeTopology := func(g Gomega) {
-				cmd = exec.Command("kubectl", "port-forward", "service/camunda", "9600", "-n", "default")
+				cmd = exec.Command("kubectl", "port-forward", "service/camunda-core", "9600", "-n", "default")
 				// run in closure to make sure it does not block
 				go func() {
 					_, err := utils.Run(cmd)
