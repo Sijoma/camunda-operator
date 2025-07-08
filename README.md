@@ -65,7 +65,7 @@ spec:
       selfSignedCertificate:
         disabled: true
 EOF
-``
+```
 
 4. Install Camunda Operator
 ```shell
