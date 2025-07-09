@@ -12,7 +12,7 @@ import (
 
 type mockStrategy struct{}
 
-func (m mockStrategy) BuildResources(osc v1alpha1.OrchestrationCluster) ([]client.Object, error) {
+func (m mockStrategy) BuildResources(_ v1alpha1.OrchestrationCluster) ([]client.Object, error) {
 	return nil, nil
 }
 

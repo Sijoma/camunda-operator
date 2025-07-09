@@ -69,7 +69,7 @@ func createCamundaStatefulSet(
 				MatchLabels: labels.CreateSelector(&camunda),
 			},
 			Template:             createPodTemplate(camunda),
-			VolumeClaimTemplates: createVolumeClaimTemplates(camunda),
+			VolumeClaimTemplates: createVolumeClaimTemplates(),
 		},
 	}
 }
@@ -141,7 +141,7 @@ func createVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func createVolumeClaimTemplates(camunda v1alpha1.OrchestrationCluster) []corev1.PersistentVolumeClaim {
+func createVolumeClaimTemplates() []corev1.PersistentVolumeClaim {
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{

@@ -26,8 +26,8 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
 
 	"github.com/camunda/camunda-operator/test/utils"
 )
@@ -395,18 +395,18 @@ type tokenRequest struct {
 type clusterResponse struct {
 	Version int `json:"version"`
 	Brokers []struct {
-		Id            int    `json:"id"`
+		ID            int    `json:"id"`
 		State         string `json:"state"`
 		Version       int    `json:"version"`
 		LastUpdatedAt string `json:"lastUpdatedAt"`
 		Partitions    []struct {
-			Id       int    `json:"id"`
+			ID       int    `json:"id"`
 			State    string `json:"state"`
 			Priority int    `json:"priority"`
 			Config   struct {
 				Exporting struct {
 					Exporters []struct {
-						Id    string `json:"id"`
+						ID    string `json:"id"`
 						State string `json:"state"`
 					} `json:"exporters"`
 				} `json:"exporting"`

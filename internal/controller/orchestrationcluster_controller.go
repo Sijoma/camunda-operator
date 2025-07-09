@@ -39,14 +39,17 @@ type OrchestrationClusterReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// nolint:lll
 // +kubebuilder:rbac:groups=core.camunda.io,resources=orchestrationclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core.camunda.io,resources=orchestrationclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core.camunda.io,resources=orchestrationclusters/finalizers,verbs=update
 
+// nolint:lll
 // +kubebuilder:rbac:groups=core,resources=services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=core,resources=services/status,verbs=get
 
 // CRUD apps: statefulsets
+// nolint:lll
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/scale,verbs=get;update
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get
@@ -90,7 +93,13 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 		merged := k8sLabels.Merge(resource.GetLabels(), labels.Create(orchestrationCluster))
 		resource.SetLabels(merged)
 
-		if err := r.Patch(ctx, resource, client.Apply, client.ForceOwnership, client.FieldOwner("orchestrationcluster-controller")); err != nil {
+		if err := r.Patch(
+			ctx,
+			resource,
+			client.Apply,
+			client.ForceOwnership,
+			client.FieldOwner("orchestrationcluster-controller"),
+		); err != nil {
 			log.FromContext(ctx).Error(err, "Failed to create or patch resource", "resource", resource.GetName())
 			return ctrl.Result{}, err
 		}
@@ -117,7 +126,12 @@ func (r *OrchestrationClusterReconciler) SetupWithManager(mgr ctrl.Manager) erro
 		Complete(r)
 }
 
-func lookupService(ctx context.Context, cli client.Client, cluster *corev1alpha1.OrchestrationCluster, desiredPort int32) (*corev1.Service, error) {
+func lookupService(
+	ctx context.Context,
+	cli client.Client,
+	cluster *corev1alpha1.OrchestrationCluster,
+	desiredPort int32,
+) (*corev1.Service, error) {
 	selector := client.MatchingLabels(labels.CreateSelector(cluster))
 	var svcList corev1.ServiceList
 	if err := cli.List(ctx, &svcList, selector); err != nil {

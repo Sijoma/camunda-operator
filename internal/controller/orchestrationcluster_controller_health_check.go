@@ -13,11 +13,14 @@ import (
 	corev1alpha1 "github.com/camunda/camunda-operator/api/v1alpha1"
 )
 
-func (r *OrchestrationClusterReconciler) checkCamunda(ctx context.Context, cluster *corev1alpha1.OrchestrationCluster) error {
+func (r *OrchestrationClusterReconciler) checkCamunda(
+	ctx context.Context,
+	osc *corev1alpha1.OrchestrationCluster,
+) error {
 	actuatorPort := int32(9600)
-	svc, err := lookupService(ctx, r.Client, cluster, actuatorPort)
+	svc, err := lookupService(ctx, r.Client, osc, actuatorPort)
 	if err != nil {
-		return fmt.Errorf("failed to lookup service for cluster %s: %w", cluster.Name, err)
+		return fmt.Errorf("failed to lookup service for osc %s: %w", osc.Name, err)
 	}
 
 	actuatorURL := &url.URL{
@@ -37,41 +40,41 @@ func (r *OrchestrationClusterReconciler) checkCamunda(ctx context.Context, clust
 		return err
 	}
 
-	// Check if the cluster is ready
+	// Check if the osc is ready
 	ready := false
 
 	if len(topo.PendingChange.Pending) > 0 {
-		// If there are pending changes, we can assume that the cluster is scaling.
+		// If there are pending changes, we can assume that the osc is scaling.
 		// We can update the status or log this information as needed.
 		log.FromContext(ctx).Info("Cluster is scaling", "pendingChanges", topo.PendingChange.Pending)
 	} else {
-		log.FromContext(ctx).Info("No pending changes in cluster topology")
+		log.FromContext(ctx).Info("No pending changes in osc topology")
 	}
 
-	if len(topo.Brokers) != int(cluster.Spec.ClusterSize) {
+	if len(topo.Brokers) != int(osc.Spec.ClusterSize) {
 		log.FromContext(ctx).
 			Info("Cluster size does not match desired size",
-				"desiredSize", cluster.Spec.ClusterSize,
+				"desiredSize", osc.Spec.ClusterSize,
 				"currentSize", len(topo.Brokers))
 	}
 
 	// TODO: Implement proper status
-	if len(topo.Brokers) == int(cluster.Spec.ClusterSize) && topo.Version > 0 {
+	if len(topo.Brokers) == int(osc.Spec.ClusterSize) && topo.Version > 0 {
 		ready = true
 	}
 	conditionStatus := metav1.ConditionTrue
 	if ready {
 		conditionStatus = metav1.ConditionTrue
 	}
-	changed := meta.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
+	changed := meta.SetStatusCondition(&osc.Status.Conditions, metav1.Condition{
 		Type:               "Ready",
 		Status:             conditionStatus,
-		ObservedGeneration: cluster.Generation,
+		ObservedGeneration: osc.Generation,
 		Reason:             "CamundaReplicasReady",
 		Message:            "replicas are ready",
 	})
 	if changed {
-		err = r.Status().Update(ctx, cluster)
+		err = r.Status().Update(ctx, osc)
 		if err != nil {
 			return err
 		}
