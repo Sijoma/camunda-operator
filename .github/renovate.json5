@@ -6,12 +6,8 @@
 
   postUpdateOptions: ["gomodTidy"],
 
-  "packageRules": [
-    {
-      // Exclude example image
-      "matchDatasources": ["docker"],
-      "excludePackagePatterns": ["^example.com/camunda-operator"],
-      "enabled": true
-    }
+  "ignorePaths": [
+    // Ignore kubebuilder generated files
+    "config/**"
   ]
 }
