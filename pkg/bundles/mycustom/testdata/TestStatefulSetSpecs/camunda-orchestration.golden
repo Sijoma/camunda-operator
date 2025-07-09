@@ -44,7 +44,7 @@ spec:
               apiVersion: v1
               fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
         - name: ZEEBE_BROKER_CLUSTER_INITIALCONTACTPOINTS
-          value: camunda-orchestration-0.camunda-orchestration.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-1.camunda-orchestration.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-2.camunda-orchestration.camunda-orchestration-namespace.svc.cluster.local:26502
+          value: camunda-orchestration-0.camunda-orchestration-core.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-1.camunda-orchestration-core.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-2.camunda-orchestration-core.camunda-orchestration-namespace.svc.cluster.local:26502
         - name: ZEEBE_BROKER_CLUSTER_PARTITIONS_COUNT
           value: "3"
         - name: ZEEBE_BROKER_CLUSTER_REPLICATION_FACTOR
