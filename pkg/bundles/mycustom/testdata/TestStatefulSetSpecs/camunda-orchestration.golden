@@ -23,7 +23,7 @@ spec:
       app.kubernetes.io/managed-by: orchestrationcluster-controller
       app.kubernetes.io/name: camunda-platform
       app.kubernetes.io/part-of: camunda-platform
-  serviceName: camunda-orchestration
+  serviceName: camunda-orchestration-core
   template:
     metadata:
       creationTimestamp: null
@@ -188,9 +188,11 @@ spec:
           seccompProfile:
             type: RuntimeDefault
         startupProbe:
+          failureThreshold: 30
           httpGet:
             path: /actuator/health/startup
             port: management
+          initialDelaySeconds: 20
         volumeMounts:
         - mountPath: /usr/local/zeebe/data
           name: data
