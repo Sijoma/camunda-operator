@@ -17,10 +17,10 @@ limitations under the License.
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,6 +28,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
+	"github.com/sijoma/camunda-go-sdk/management"
 
 	"github.com/camunda/camunda-operator/test/utils"
 )
@@ -311,22 +312,25 @@ var _ = Describe("Manager", Ordered, func() {
 					}
 				}()
 
-				_, _ = fmt.Fprintf(GinkgoWriter, "error: %s\n", err)
 				_, _ = fmt.Fprintf(GinkgoWriter, "sleeping 5 sec\n")
 				// Wait for port-forward to be working
 				time.Sleep(time.Second * 5)
 
-				get, err := http.Get("http://localhost:9600/actuator/cluster")
+				err := printPodInfo("default")
 				g.Expect(err).NotTo(HaveOccurred())
-				_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
-				//nolint:errcheck
-				defer get.Body.Close()
-				g.Expect(get.StatusCode).To(Equal(http.StatusOK))
-				body, _ := io.ReadAll(get.Body)
-				var resp clusterResponse
-				err = json.Unmarshal(body, &resp)
+
+				mgmtClient, err := management.NewClient(management.WithBaseURL(url.URL{Scheme: "http", Host: "localhost:9600"}))
+				g.Expect(err).NotTo(HaveOccurred(), "Failed to create management client")
+
+				ctx := context.Background()
+				get, err := mgmtClient.Cluster.Topology(ctx)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp.Brokers).To(HaveLen(3))
+				if err != nil {
+					_, _ = fmt.Fprintf(GinkgoWriter, "output: %s\n", err)
+				}
+
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(get.Brokers).To(HaveLen(3))
 			}
 			Eventually(verifyZeebeTopology, time.Minute*5, time.Second).Should(Succeed())
 		})
@@ -392,25 +396,12 @@ type tokenRequest struct {
 	} `json:"status"`
 }
 
-type clusterResponse struct {
-	Version int `json:"version"`
-	Brokers []struct {
-		ID            int    `json:"id"`
-		State         string `json:"state"`
-		Version       int    `json:"version"`
-		LastUpdatedAt string `json:"lastUpdatedAt"`
-		Partitions    []struct {
-			ID       int    `json:"id"`
-			State    string `json:"state"`
-			Priority int    `json:"priority"`
-			Config   struct {
-				Exporting struct {
-					Exporters []struct {
-						ID    string `json:"id"`
-						State string `json:"state"`
-					} `json:"exporters"`
-				} `json:"exporting"`
-			} `json:"config"`
-		} `json:"partitions"`
-	} `json:"brokers"`
+func printPodInfo(namespace string) error {
+	kGetPods := exec.Command("kubectl", "get", "pods", "-n", namespace)
+	cmd, err := utils.Run(kGetPods)
+	if err != nil {
+		return fmt.Errorf("error getting pods in namespace %s: %w", namespace, err)
+	}
+	fmt.Printf("\n --- Pod Information ---\n %s\n", cmd)
+	return nil
 }
