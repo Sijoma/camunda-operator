@@ -172,6 +172,8 @@ github.com/shirou/gopsutil/v4 v4.25.1 h1:QSWkTc+fu9LTAWfkZwZ6j8MSUk4A2LV7rbH0Zqm
 github.com/shirou/gopsutil/v4 v4.25.1/go.mod h1:RoUCUpndaJFtT+2zsZzzmhvbfGoDCJ7nFXKJf8GqJbI=
 github.com/sijoma/camunda-go-sdk v0.0.0-20250629221903-1c789c485da6 h1:08dJrjh/BvIY+kI0L58LsJosfmrb0fcx4z4o79xHRLY=
 github.com/sijoma/camunda-go-sdk v0.0.0-20250629221903-1c789c485da6/go.mod h1:tH6ykvHGQto03/CNU4iuhmi2vtPUCL7HaBuZeRBAGKQ=
+github.com/sijoma/camunda-go-sdk v0.0.0-20250706182811-2b533d815580 h1:WVxY1TT38+LZ4aJVTktqFrQnQUbowuhOP2smbGr4qUk=
+github.com/sijoma/camunda-go-sdk v0.0.0-20250706182811-2b533d815580/go.mod h1:tH6ykvHGQto03/CNU4iuhmi2vtPUCL7HaBuZeRBAGKQ=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/spf13/cobra v1.8.1 h1:e5/vxKd/rZsfSJMUX1agtjeTDf+qv1/JdBF8gg5k9ZM=
