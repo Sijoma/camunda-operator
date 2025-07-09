@@ -62,7 +62,7 @@ func createCamundaStatefulSet(
 			Labels:    labels.Create(&camunda),
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName:         camunda.Name,
+			ServiceName:         buildNameWithCore(camunda),
 			PodManagementPolicy: appsv1.ParallelPodManagement,
 			Replicas:            ptr.To(camunda.Spec.ClusterSize),
 			Selector: &metav1.LabelSelector{
@@ -259,6 +259,8 @@ func startupProbe() *corev1.Probe {
 				Path: "/actuator/health/startup",
 			},
 		},
+		InitialDelaySeconds: 20,
+		FailureThreshold:    30, // allow more time for startup
 	}
 }
 
