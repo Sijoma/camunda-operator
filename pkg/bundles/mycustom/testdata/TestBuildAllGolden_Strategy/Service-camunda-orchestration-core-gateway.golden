@@ -10,10 +10,9 @@ metadata:
     app.kubernetes.io/name: camunda-platform
     app.kubernetes.io/part-of: camunda-platform
     app.kubernetes.io/version: 8.8.0-alpha1
-  name: camunda-orchestration-core
+  name: camunda-orchestration-core-gateway
   namespace: camunda-orchestration-namespace
 spec:
-  clusterIP: None
   ports:
   - name: http
     port: 8080
@@ -24,12 +23,6 @@ spec:
   - name: gateway
     port: 26500
     targetPort: 0
-  - name: command
-    port: 26501
-    targetPort: 0
-  - name: internal
-    port: 26502
-    targetPort: 0
   publishNotReadyAddresses: true
   selector:
     app: camunda-platform
@@ -38,5 +31,6 @@ spec:
     app.kubernetes.io/managed-by: orchestrationcluster-controller
     app.kubernetes.io/name: camunda-platform
     app.kubernetes.io/part-of: camunda-platform
+  type: ClusterIP
 status:
   loadBalancer: {}

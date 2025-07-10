@@ -303,7 +303,7 @@ var _ = Describe("Manager", Ordered, func() {
 
 			By("checking actuator cluster info")
 			verifyZeebeTopology := func(g Gomega) {
-				cmd = exec.Command("kubectl", "port-forward", "service/camunda-core", "9600", "-n", "default")
+				cmd = exec.Command("kubectl", "port-forward", "service/camunda-core-gateway", "9600", "-n", "default")
 				// run in closure to make sure it does not block
 				go func() {
 					_, err := utils.Run(cmd)

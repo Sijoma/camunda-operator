@@ -1,15 +1,12 @@
 package mycustom
 
 import (
-	"fmt"
 	"strconv"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,31 +18,12 @@ type Strategy struct{}
 
 func (m Strategy) BuildResources(osc v1alpha1.OrchestrationCluster) ([]client.Object, error) {
 	svcAcc := createServiceAccount(osc)
-	svc := createService(osc)
+	headlessSvc := createHeadlessService(osc)
+	gatewaySvc := createGatewayService(osc)
 	sts := createCamundaStatefulSet(osc)
 
-	resources := []client.Object{svcAcc, svc, sts}
+	resources := []client.Object{svcAcc, headlessSvc, gatewaySvc, sts}
 	return resources, nil
-}
-
-func createService(camunda v1alpha1.OrchestrationCluster) *corev1.Service {
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      buildNameWithCore(camunda),
-			Namespace: camunda.Namespace,
-			Labels:    labels.Create(&camunda),
-		},
-		Spec: corev1.ServiceSpec{
-			ClusterIP:                "None",
-			Selector:                 labels.CreateSelector(&camunda),
-			Ports:                    createServicePorts(),
-			PublishNotReadyAddresses: true,
-		},
-	}
 }
 
 func createCamundaStatefulSet(
@@ -62,7 +40,7 @@ func createCamundaStatefulSet(
 			Labels:    labels.Create(&camunda),
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName:         buildNameWithCore(camunda),
+			ServiceName:         createHeadlessService(camunda).Name,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
 			Replicas:            ptr.To(camunda.Spec.ClusterSize),
 			Selector: &metav1.LabelSelector{
@@ -75,9 +53,7 @@ func createCamundaStatefulSet(
 }
 
 func createPodTemplate(camunda v1alpha1.OrchestrationCluster) corev1.PodTemplateSpec {
-	// TODO: Make it override the static predefined values
-	fullEnv := camunda.Spec.Env
-	fullEnv = append(fullEnv, env(camunda)...)
+	fullEnv := mergeEnvVars(env(camunda), camunda.Spec.Env)
 
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,7 +61,7 @@ func createPodTemplate(camunda v1alpha1.OrchestrationCluster) corev1.PodTemplate
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext:    createPodSecurityContext(),
-			ServiceAccountName: buildNameWithCore(camunda),
+			ServiceAccountName: createServiceAccount(camunda).Name,
 			Containers: []corev1.Container{
 				{
 					Name:            "camunda",
@@ -178,92 +154,6 @@ func createPodSecurityContext() *corev1.PodSecurityContext {
 	}
 }
 
-func createPorts() []corev1.ContainerPort {
-	return []corev1.ContainerPort{
-		{
-			Name:          "http",
-			ContainerPort: 8080,
-		},
-		{
-			Name:          "management",
-			ContainerPort: 9600,
-		},
-		{
-			Name:          "gateway",
-			ContainerPort: 26500,
-		},
-		{
-			Name:          "command",
-			ContainerPort: 26501,
-		},
-		{
-			Name:          "internal",
-			ContainerPort: 26502,
-		},
-	}
-}
-
-func createServicePorts() []corev1.ServicePort {
-	return []corev1.ServicePort{
-		{
-			Name: "http",
-			Port: 8080,
-		},
-		{
-			Name: "management",
-			Port: 9600,
-		},
-		{
-			Name: "gateway",
-			Port: 26500,
-		},
-		{
-			Name: "command",
-			Port: 26501,
-		},
-		{
-			Name: "internal",
-			Port: 26502,
-		},
-	}
-}
-
-func livenessProbe() *corev1.Probe {
-	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Port: intstr.FromString("management"),
-				Path: "/actuator/health/liveness",
-			},
-		},
-	}
-}
-
-func readinessProbe() *corev1.Probe {
-	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Port:   intstr.FromString("management"),
-				Path:   "/actuator/health/readiness",
-				Scheme: corev1.URISchemeHTTP,
-			},
-		},
-	}
-}
-
-func startupProbe() *corev1.Probe {
-	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Port: intstr.FromString("management"),
-				Path: "/actuator/health/startup",
-			},
-		},
-		InitialDelaySeconds: 20,
-		FailureThreshold:    30, // allow more time for startup
-	}
-}
-
 func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 	e := []corev1.EnvVar{
 		{
@@ -344,36 +234,28 @@ func env(camunda v1alpha1.OrchestrationCluster) []corev1.EnvVar {
 	return e
 }
 
-func getPodAddresses(camunda v1alpha1.OrchestrationCluster) string {
-	podAddresses := make([]string, camunda.Spec.ClusterSize)
-	svc := createService(camunda)
-
-	for podIndex := int32(0); podIndex < camunda.Spec.ClusterSize; podIndex++ {
-		podAddresses[podIndex] = fmt.Sprintf(
-			"%s-%d.%s.%s.svc.cluster.local:26502",
-			camunda.Name,
-			podIndex,
-			svc.Name,
-			camunda.Namespace,
-		)
-	}
-	return strings.Join(podAddresses, ",")
-}
-
-func createServiceAccount(camunda v1alpha1.OrchestrationCluster) *corev1.ServiceAccount {
-	return &corev1.ServiceAccount{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ServiceAccount",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      buildNameWithCore(camunda),
-			Namespace: camunda.Namespace,
-			Labels:    labels.Create(&camunda),
-		},
-	}
-}
-
 func buildNameWithCore(camunda v1alpha1.OrchestrationCluster) string {
 	return camunda.Name + "-core"
+}
+
+func mergeEnvVars(base, override []corev1.EnvVar) []corev1.EnvVar {
+	envMap := make(map[string]corev1.EnvVar)
+
+	// Add base env vars
+	for _, env := range base {
+		envMap[env.Name] = env
+	}
+
+	// Override with new env vars
+	for _, env := range override {
+		envMap[env.Name] = env
+	}
+
+	// Convert back to slice
+	result := make([]corev1.EnvVar, 0, len(envMap))
+	for _, env := range envMap {
+		result = append(result, env)
+	}
+
+	return result
 }

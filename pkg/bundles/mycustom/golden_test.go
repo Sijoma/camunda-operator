@@ -66,7 +66,7 @@ func TestStatefulSetSpecs(t *testing.T) {
 }
 
 func TestServiceSpec(t *testing.T) {
-	got := createService(apiSpec())
+	got := createHeadlessService(apiSpec())
 	golden, err := goldens.New(t, apiSpec().Name)
 	if err != nil {
 		t.Error("unable to create golden file", err)
