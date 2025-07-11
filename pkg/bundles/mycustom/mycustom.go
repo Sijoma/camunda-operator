@@ -1,6 +1,7 @@
 package mycustom
 
 import (
+	"sort"
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -238,24 +239,27 @@ func buildNameWithCore(camunda v1alpha1.OrchestrationCluster) string {
 	return camunda.Name + "-core"
 }
 
-func mergeEnvVars(base, override []corev1.EnvVar) []corev1.EnvVar {
-	envMap := make(map[string]corev1.EnvVar)
+// mergeEnvVars returns the union of two []EnvVars, with any values set in first overriding those in second
+func mergeEnvVars(first []corev1.EnvVar, second []corev1.EnvVar) []corev1.EnvVar {
+	out := first
+	if len(second) != 0 {
+		existing := make(map[string]struct{}, len(first))
 
-	// Add base env vars
-	for _, env := range base {
-		envMap[env.Name] = env
+		for _, envVar := range first {
+			existing[envVar.Name] = struct{}{}
+		}
+
+		for _, envVar := range second {
+			if _, exists := existing[envVar.Name]; !exists {
+				out = append(out, envVar)
+			}
+		}
 	}
 
-	// Override with new env vars
-	for _, env := range override {
-		envMap[env.Name] = env
-	}
+	// map order is undefined so sort for stable test output
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Name < out[j].Name
+	})
 
-	// Convert back to slice
-	result := make([]corev1.EnvVar, 0, len(envMap))
-	for _, env := range envMap {
-		result = append(result, env)
-	}
-
-	return result
+	return out
 }

@@ -38,43 +38,9 @@ spec:
     spec:
       containers:
       - env:
-        - name: ZEEBE_BROKER_CLUSTER_NODEID
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
-        - name: ZEEBE_BROKER_CLUSTER_INITIALCONTACTPOINTS
-          value: camunda-orchestration-0.camunda-orchestration-core-headless.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-1.camunda-orchestration-core-headless.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-2.camunda-orchestration-core-headless.camunda-orchestration-namespace.svc.cluster.local:26502
-        - name: ZEEBE_BROKER_CLUSTER_PARTITIONS_COUNT
-          value: "3"
-        - name: ZEEBE_BROKER_CLUSTER_REPLICATION_FACTOR
-          value: "3"
-        - name: ZEEBE_BROKER_CLUSTER_CLUSTER_SIZE
-          value: "3"
-        - name: SPRING_PROFILES_ACTIVE
-          value: identity,operate,tasklist,broker,consolidated-auth
-        - name: CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED
-          value: "true"
-        - name: CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI
-          value: "false"
-        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_CLASSNAME
-          value: io.camunda.exporter.CamundaExporter
-        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_URL
-          value: localhost:9205
-        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_USERNAME
-          value: my-username
-        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: ""
-              name: my-password-secret
-        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_CLASSNAME
-          value: io.camunda.zeebe.exporter.ElasticsearchExporter
-        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL
-          value: localhost:9205
-        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_AUTHENTICATION_USERNAME
-          value: my-username
-        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_AUTHENTICATION_PASSWORD
+        - name: CAMUNDA_DATABASE_CONNECT_CLUSTERNAME
+          value: elasticsearch
+        - name: CAMUNDA_DATABASE_CONNECT_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
@@ -83,26 +49,24 @@ spec:
           value: elasticsearch
         - name: CAMUNDA_DATABASE_CONNECT_URL
           value: localhost:9205
-        - name: CAMUNDA_DATABASE_CONNECT_CLUSTERNAME
-          value: elasticsearch
         - name: CAMUNDA_DATABASE_CONNECT_USERNAME
           value: my-username
-        - name: CAMUNDA_DATABASE_CONNECT_PASSWORD
+        - name: CAMUNDA_OPERATE_DATABASE
+          value: elasticsearch
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_CLUSTERNAME
+          value: elasticsearch
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
               name: my-password-secret
-        - name: CAMUNDA_OPERATE_DATABASE
-          value: elasticsearch
-        - name: CAMUNDA_OPERATE_ELASTICSEARCH_URL
-          value: localhost:9205
         - name: CAMUNDA_OPERATE_ELASTICSEARCH_PREFIX
           value: zeebe-record
-        - name: CAMUNDA_OPERATE_ELASTICSEARCH_CLUSTERNAME
-          value: elasticsearch
+        - name: CAMUNDA_OPERATE_ELASTICSEARCH_URL
+          value: localhost:9205
         - name: CAMUNDA_OPERATE_ELASTICSEARCH_USERNAME
           value: my-username
-        - name: CAMUNDA_OPERATE_ELASTICSEARCH_PASSWORD
+        - name: CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
@@ -111,22 +75,26 @@ spec:
           value: localhost:9205
         - name: CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_USERNAME
           value: my-username
-        - name: CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_PASSWORD
+        - name: CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI
+          value: "false"
+        - name: CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED
+          value: "true"
+        - name: CAMUNDA_TASKLIST_DATABASE
+          value: elasticsearch
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_CLUSTERNAME
+          value: elasticsearch
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
               name: my-password-secret
-        - name: CAMUNDA_TASKLIST_DATABASE
-          value: elasticsearch
-        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_URL
-          value: localhost:9205
         - name: CAMUNDA_TASKLIST_ELASTICSEARCH_PREFIX
           value: zeebe-record
-        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_CLUSTERNAME
-          value: elasticsearch
+        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_URL
+          value: localhost:9205
         - name: CAMUNDA_TASKLIST_ELASTICSEARCH_USERNAME
           value: my-username
-        - name: CAMUNDA_TASKLIST_ELASTICSEARCH_PASSWORD
+        - name: CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
@@ -135,7 +103,7 @@ spec:
           value: localhost:9205
         - name: CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_USERNAME
           value: my-username
-        - name: CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_PASSWORD
+        - name: CAMUNDA_ZEEBE_ELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
@@ -144,11 +112,43 @@ spec:
           value: localhost:9205
         - name: CAMUNDA_ZEEBE_ELASTICSEARCH_USERNAME
           value: my-username
-        - name: CAMUNDA_ZEEBE_ELASTICSEARCH_PASSWORD
+        - name: SPRING_PROFILES_ACTIVE
+          value: identity,operate,tasklist,broker,consolidated-auth
+        - name: ZEEBE_BROKER_CLUSTER_CLUSTER_SIZE
+          value: "3"
+        - name: ZEEBE_BROKER_CLUSTER_INITIALCONTACTPOINTS
+          value: camunda-orchestration-0.camunda-orchestration-core-headless.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-1.camunda-orchestration-core-headless.camunda-orchestration-namespace.svc.cluster.local:26502,camunda-orchestration-2.camunda-orchestration-core-headless.camunda-orchestration-namespace.svc.cluster.local:26502
+        - name: ZEEBE_BROKER_CLUSTER_NODEID
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+        - name: ZEEBE_BROKER_CLUSTER_PARTITIONS_COUNT
+          value: "3"
+        - name: ZEEBE_BROKER_CLUSTER_REPLICATION_FACTOR
+          value: "3"
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
               name: my-password-secret
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_URL
+          value: localhost:9205
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_ARGS_CONNECT_USERNAME
+          value: my-username
+        - name: ZEEBE_BROKER_EXPORTERS_CAMUNDAEXPORTER_CLASSNAME
+          value: io.camunda.exporter.CamundaExporter
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_AUTHENTICATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ""
+              name: my-password-secret
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_AUTHENTICATION_USERNAME
+          value: my-username
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL
+          value: localhost:9205
+        - name: ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_CLASSNAME
+          value: io.camunda.zeebe.exporter.ElasticsearchExporter
         envFrom:
         - configMapRef:
             name: camunda-orchestration-configmap
