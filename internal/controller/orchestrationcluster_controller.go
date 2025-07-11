@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1alpha1 "github.com/camunda/camunda-operator/api/v1alpha1"
 	"github.com/camunda/camunda-operator/pkg/bundles"
@@ -55,9 +55,9 @@ type OrchestrationClusterReconciler struct {
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get
 
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	_ = logf.FromContext(ctx)
 
 	orchestrationCluster := new(corev1alpha1.OrchestrationCluster)
 	err := r.Get(ctx, req.NamespacedName, orchestrationCluster)
@@ -65,28 +65,27 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
+	log := logf.FromContext(ctx,
+		"cluster", orchestrationCluster.Name,
+		"version", orchestrationCluster.Spec.Version,
+	)
+
 	bundle, err := bundles.New(*orchestrationCluster)
 	if err != nil {
-		log.FromContext(ctx).Error(err, "Error creating bundle for OrchestrationCluster",
-			"cluster", orchestrationCluster.Name,
-			"version", orchestrationCluster.Spec.Version,
-		)
+		log.Error(err, "Error creating bundle for OrchestrationCluster")
 		return ctrl.Result{}, err
 	}
 
 	resources, err := bundle.Resources()
 	if err != nil {
-		log.FromContext(ctx).Error(err, "Error building resources for OrchestrationCluster",
-			"cluster", orchestrationCluster.Name,
-			"version", orchestrationCluster.Spec.Version,
-		)
+		log.Error(err, "Error building resources for OrchestrationCluster")
 		return ctrl.Result{}, err
 	}
 
 	for _, resource := range resources {
 		// Create or update the resource
 		if err := ctrl.SetControllerReference(orchestrationCluster, resource, r.Scheme); err != nil {
-			log.FromContext(ctx).Error(err, "Failed to set controller reference", "resource", resource.GetName())
+			log.Error(err, "Failed to set controller reference", "resource", resource.GetName())
 			return ctrl.Result{}, err
 		}
 
@@ -100,17 +99,14 @@ func (r *OrchestrationClusterReconciler) Reconcile(ctx context.Context, req ctrl
 			client.ForceOwnership,
 			client.FieldOwner("orchestrationcluster-controller"),
 		); err != nil {
-			log.FromContext(ctx).Error(err, "Failed to create or patch resource", "resource", resource.GetName())
+			log.Error(err, "Failed to create or patch resource", "resource", resource.GetName())
 			return ctrl.Result{}, err
 		}
 	}
 
 	err = r.checkCamunda(ctx, orchestrationCluster)
 	if err != nil {
-		log.FromContext(ctx).Error(err,
-			"Error checking Camunda",
-			"cluster", orchestrationCluster.Name,
-		)
+		log.Error(err, "Error checking Camunda")
 	}
 
 	return ctrl.Result{}, nil
