@@ -38,18 +38,18 @@ spec:
     spec:
       containers:
       - env:
-        - name: CAMUNDA_DATABASE_CONNECT_CLUSTERNAME
+        - name: CAMUNDA_DATABASE_CLUSTERNAME
           value: elasticsearch
-        - name: CAMUNDA_DATABASE_CONNECT_PASSWORD
+        - name: CAMUNDA_DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
               key: ""
               name: my-password-secret
-        - name: CAMUNDA_DATABASE_CONNECT_TYPE
+        - name: CAMUNDA_DATABASE_TYPE
           value: elasticsearch
-        - name: CAMUNDA_DATABASE_CONNECT_URL
+        - name: CAMUNDA_DATABASE_URL
           value: localhost:9205
-        - name: CAMUNDA_DATABASE_CONNECT_USERNAME
+        - name: CAMUNDA_DATABASE_USERNAME
           value: my-username
         - name: CAMUNDA_OPERATE_DATABASE
           value: elasticsearch

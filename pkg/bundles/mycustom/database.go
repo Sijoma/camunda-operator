@@ -79,23 +79,23 @@ func camundaDatabaseElasticsearch(
 ) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name:  "CAMUNDA_DATABASE_CONNECT_TYPE",
+			Name:  "CAMUNDA_DATABASE_TYPE",
 			Value: "elasticsearch",
 		},
 		{
-			Name:  "CAMUNDA_DATABASE_CONNECT_URL",
+			Name:  "CAMUNDA_DATABASE_URL",
 			Value: hostName,
 		},
 		{
-			Name:  "CAMUNDA_DATABASE_CONNECT_CLUSTERNAME",
+			Name:  "CAMUNDA_DATABASE_CLUSTERNAME",
 			Value: "elasticsearch",
 		},
 		{
-			Name:  "CAMUNDA_DATABASE_CONNECT_USERNAME",
+			Name:  "CAMUNDA_DATABASE_USERNAME",
 			Value: username,
 		},
 		{
-			Name:      "CAMUNDA_DATABASE_CONNECT_PASSWORD",
+			Name:      "CAMUNDA_DATABASE_PASSWORD",
 			ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &password},
 		},
 	}
