@@ -11,10 +11,34 @@ spec:
     kind: OrchestrationCluster
     listKind: OrchestrationClusterList
     plural: orchestrationclusters
+    shortNames:
+    - oc
     singular: orchestrationcluster
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    - jsonPath: .spec.clusterSize
+      name: Cluster Size
+      type: integer
+    - jsonPath: .spec.partitionCount
+      name: Partitions
+      type: integer
+    - jsonPath: .spec.replicationFactor
+      name: Replication
+      type: integer
+    - jsonPath: .spec.database.type
+      name: Database
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: OrchestrationCluster is the Schema for the orchestrationclusters

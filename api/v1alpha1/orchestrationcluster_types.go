@@ -75,6 +75,14 @@ type OrchestrationClusterStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=oc
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
+// +kubebuilder:printcolumn:name="Cluster Size",type="integer",JSONPath=".spec.clusterSize"
+// +kubebuilder:printcolumn:name="Partitions",type="integer",JSONPath=".spec.partitionCount"
+// +kubebuilder:printcolumn:name="Replication",type="integer",JSONPath=".spec.replicationFactor"
+// +kubebuilder:printcolumn:name="Database",type="string",JSONPath=".spec.database.type"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // OrchestrationCluster is the Schema for the orchestrationclusters API.
 type OrchestrationCluster struct {
