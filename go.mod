@@ -8,7 +8,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.38.0
 	github.com/sergi/go-diff v1.4.0
-	github.com/sijoma/camunda-go-sdk v0.0.0-20250711182326-035e8cfbb431
+	github.com/sijoma/camunda-go-sdk v0.0.0-20250727202241-bb0a281c6afb
 	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.33.0
 	k8s.io/apimachinery v0.33.0
